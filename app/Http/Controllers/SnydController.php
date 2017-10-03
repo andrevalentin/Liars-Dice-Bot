@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\Game;
+use App\Models\GameParticipant;
 use App\Models\User;
 use BotMan\BotMan\BotMan;
 
@@ -44,10 +45,42 @@ class SnydController extends Controller
         $game->host_id = $this->user->id;
         $game->save();
 
+        $participant = new GameParticipant;
+        $participant->game_id = $game->id;
+        $participant->participant_id = $this->user->id;
+        $participant->save();
+
         echo "New game of Snyd starting! ID: $game->id Host: $game->host_id \n";
 
         $bot->reply("Let's play Snyd! <@" . $this->user->slack_id . "> is hosting.. This is game number #$game->id! Type \"me\" to join!");
         return;
+    }
+
+    public function join(BotMan $bot)
+    {
+        // Getting the user
+        $this->user = User::where('slack_id', $bot->getUser()->getId())->first();
+
+        // Getting the currently open game
+        $game = Game::where('state', 'open')
+            ->first();
+        if(empty($game)) {
+            $bot->reply("There doesn't seem to be any open games right now.. :thinking_face: You could host one by asking if anyone wants to play?");
+            return;
+        }
+
+        if($game->host_id === $this->user->id) {
+            $bot->reply("You are trying to join your own game.. FeelsBadMan..");
+            return;
+        }
+
+        // At this point we KNOW that the user who is trying to join CAN join
+        $participant = new GameParticipant;
+        $participant->game_id = $game->id;
+        $participant->participant_id = $this->user->id;
+        $participant->save();
+
+        $bot->reply("You have successfully joined the game.. please wait for the host to start it!");
     }
 
     public function close(BotMan $bot)
