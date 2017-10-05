@@ -4,9 +4,9 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
 
-class GameParticipant extends Model
+class Roll extends Model
 {
-    protected $table = 'game_participants';
+    protected $table = 'rolls';
 
     /**
      * The attributes that are mass assignable.
@@ -14,6 +14,6 @@ class GameParticipant extends Model
      * @var array
      */
     protected $fillable = [
-        'participant_order'
+        'roll', 'game_id' ,'participant_id'
     ];
 }
