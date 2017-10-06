@@ -115,14 +115,21 @@ class SnydController extends Controller
 
         $participants = GameParticipant::where('game_id', $game->id)
             ->get();
-        if(count($participants) < 2) {
+        $participant_count = count($participants);
+        if($participant_count < 2) {
             $bot->reply("You are currently the only participant of this game, a bit lonely, no? Please wait for others to join before starting the game..");
             return;
         }
 
         // Set order of players
+        $first_player = null;
         $shuffled_participants = $participants->shuffle();
         foreach ($shuffled_participants AS $key => $participant) {
+            $player = User::find($participant->participant_id);
+            if ($key == 0) {
+                $first_player = $player;
+            }
+
             GameParticipant::where('game_id', $game->id)
                 ->where('participant_id', $participant->participant_id)
                 ->update([
@@ -130,10 +137,11 @@ class SnydController extends Controller
                 ]);
 
             // Notify players about game starting
-            $player = User::find($participant->participant_id);
-            $bot->say("Alright, let's play Snyd.. Rolling the dice!", $player->slack_id);
-            if($key == 0) {
+            $bot->say("Alright, let's play Snyd.. There are *$participant_count* players in the game.. Rolling the dice!", $player->slack_id);
+            if ($key == 0) {
                 $bot->say("You are the first player! You have the first call..", $player->slack_id);
+            }else{
+                $bot->say("<@" . $first_player->slack_id . "> is the first player!", $player->slack_id);
             }
         }
 
@@ -211,20 +219,34 @@ class SnydController extends Controller
             $current_call->save();
         }
 
-        $turn_check = 0;
+        if($current_call->participant_order == ($participant_count-1)) {
+            $next_order = 0;
+        }else{
+            $next_order = $current_call->participant_order + 1;
+        }
+
+        $next_participant = $participants->where('participant_order', $next_order)->first();
+        $next_player = User::where('id', $next_participant->participant_id)->first();
+        echo "Next participant: " . $next_participant->participant_id . "\n";
+
         foreach ($participants AS $participant) {
-            if($participant->participant_id === $this->user->id) {
-                $turn_check = 1;
-                continue;
-            }
             $player = User::find($participant->participant_id);
-            $bot->say("<@" . $this->user->slack_id . "> called $call", $player->slack_id);
-            if($turn_check) {
-                $bot->say("Now it's your turn! Call or lift!", $participant->participant_id);
-                $turn_check = 0;
+            if($participant->participant_id == $next_participant->participant_id) {
+                $bot->say("<@" . $this->user->slack_id . "> called $call", $player->slack_id);
+                $bot->say("Now it's your turn! Call or lift!", $player->slack_id);
+            }elseif($participant->participant_id == $current_participant->participant_id) {
+                $bot->say("You called $call..", $player->slack_id);
+                $bot->say("Now it's <@" . $next_player->slack_id . ">'s turn..", $player->slack_id);
+            }else{
+                $bot->say("<@" . $this->user->slack_id . "> called $call", $player->slack_id);
+                $bot->say("Now it's <@" . $next_player->slack_id . ">'s turn..", $player->slack_id);
             }
         }
 
+    }
+
+    public function endRound(BotMan $bot)
+    {
 
     }
 
@@ -297,6 +319,10 @@ class SnydController extends Controller
         }else{
             return false;
         }
+    }
+
+    private function getNextTurnUser() {
+
     }
 
 }
