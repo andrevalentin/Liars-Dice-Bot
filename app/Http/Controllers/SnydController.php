@@ -13,6 +13,15 @@ class SnydController extends Controller
 {
 
     protected $user;
+    protected $game;
+    protected $calls;
+    protected $first_round = false;
+    protected $participants;
+    protected $participant_count;
+    protected $current_participant;
+    protected $current_eligible_participant_order;
+    protected $current_call;
+    protected $next_eligible_participant_order;
 
     protected $emoji_numbers = [
         1 => ":one:",
@@ -22,11 +31,6 @@ class SnydController extends Controller
         5 => ":five:",
         6 => ":six:",
     ];
-
-    public function __construct(BotMan $bot)
-    {
-        //echo "Test: " . json_encode("");
-    }
 
     public function init(BotMan $bot)
     {
@@ -86,6 +90,14 @@ class SnydController extends Controller
         }
 
         // At this point we KNOW that the user who is trying to join CAN join
+        $current_participant_check = GameParticipant::where('game_id', $game->id)
+            ->where('participant_id', $this->user->id)
+            ->first();
+        if(!empty($current_participant_check)) {
+            $bot->reply("You are already in the game, stop trying to join! Enculé!");
+            return;
+        }
+
         $participant = new GameParticipant;
         $participant->game_id = $game->id;
         $participant->participant_id = $this->user->id;
@@ -153,93 +165,99 @@ class SnydController extends Controller
         $bot->reply("Game starting! Further instructions will be sent via DM..");
     }
 
-    public function continueGame(BotMan $bot)
+    public function playRound(BotMan $bot)
     {
         // Getting the user
         $this->user = User::where('slack_id', $bot->getUser()->getId())->first();
 
-        $current_participant = GameParticipant::where('participant_id', $this->user->id)
+        $this->current_participant = GameParticipant::where('participant_id', $this->user->id)
             ->orderBy('created_at', 'desc')
             ->first();
 
-        $game = Game::find($current_participant->game_id);
-        if(!isset($game) || $game->state != 'live') {
+        $this->game = Game::find($this->current_participant->game_id);
+        if(!isset($this->game) || $this->game->state != 'live') {
             $bot->reply("Sorry, you don't seem to be in any live games.. Perhaps join or start one?");
         }
 
-        $call = $bot->getMessage()->getText();
-        echo "User called: $call \n";
-
-        $calls = Call::where('game_id', $game->id)
-            ->orderBy('created_at', 'desc')
-            ->get();
-
-        $participants = GameParticipant::where('game_id', $game->id)
+        $this->participants = GameParticipant::where('game_id', $this->game->id)
             ->orderBy('participant_order', 'asc')
             ->get();
-        $participant_count = $participants->count();
+        $this->participant_count = $this->participants->count();
 
-        if($calls->isEmpty()) {
-            if($current_participant->participant_order != 0) {
-                $bot->reply("It's not your turn yet, please wait!");
-                return;
+        $this->current_call = $bot->getMessage()->getText();
+        echo "User called: " . $this->current_call . "\n";
+
+        $this->calls = Call::where('game_id', $this->game->id)
+            ->orderBy('created_at', 'desc')
+            ->get();
+        if($this->calls->isEmpty()) {
+            $this->first_round = true;
+            $this->current_eligible_participant_order = 0;
+            $this->next_eligible_participant_order = 1;
+        }else{
+            // Find current & next eligible participant order
+            if($this->calls->first()->participant_order == ($this->participant_count-1)) {
+                $this->current_eligible_participant_order = 0;
+                $this->next_eligible_participant_order = 1;
+            }else{
+                $this->current_eligible_participant_order = $this->calls->first()->participant_order + 1;
+                if($this->current_participant->participant_order == ($this->participant_count-1)) {
+                    $this->next_eligible_participant_order = 0;
+                }else{
+                    $this->next_eligible_participant_order = $this->current_participant->participant_order + 1;
+                }
             }
+        }
+
+        if($this->current_participant->participant_order !== $this->current_eligible_participant_order) {
+            $bot->reply("It's not your turn yet, please wait!");
+            return;
+        }
+
+        if($this->current_call == 'lift') {
+            $this->endRound($bot);
+        }else{
+            $this->continueRound($bot);
+        }
+    }
+
+    public function continueRound(BotMan $bot)
+    {
+        if($this->first_round) {
             $current_call = new Call;
-            $current_call->call = $call;
-            $current_call->game_id = $game->id;
+            $current_call->call = $this->current_call;
+            $current_call->game_id = $this->game->id;
             $current_call->participant_id = $this->user->id;
-            $current_call->participant_order = $current_participant->participant_order;
+            $current_call->participant_order = $this->current_participant->participant_order;
             $current_call->save();
         }else{
-            echo "Last recorded call: " . json_encode($calls->first()->call) . "\n";
-            $my_turn = false;
-
-            // Check order
-            if($current_participant->participant_order == ($calls->first()->participant_order + 1)) {
-                $my_turn = true;
-            }
-            if($current_participant->participant_order == 0 && $calls->first()->participant_order == ($participant_count-1)) {
-                $my_turn = true;
-            }
-
-            if(!$my_turn) {
-                $bot->reply("It's not your turn.. hold your horses!");
-                return;
-            }
-
-            if(!$this->compareTwoCalls($call, $calls->first()->call)) {
+            if(!$this->compareTwoCalls($this->current_call, $this->calls->first()->call)) {
                 $bot->reply("You're call was lower than the person before you, please say something else..");
                 return;
             }
             $current_call = new Call;
-            $current_call->call = $call;
-            $current_call->game_id = $game->id;
+            $current_call->call = $this->current_call;
+            $current_call->game_id = $this->game->id;
             $current_call->participant_id = $this->user->id;
-            $current_call->participant_order = $current_participant->participant_order;
+            $current_call->participant_order = $this->current_participant->participant_order;
             $current_call->save();
         }
 
-        if($current_call->participant_order == ($participant_count-1)) {
-            $next_order = 0;
-        }else{
-            $next_order = $current_call->participant_order + 1;
-        }
-
-        $next_participant = $participants->where('participant_order', $next_order)->first();
+        $next_participant = $this->participants->where('participant_order', $this->next_eligible_participant_order)->first();
         $next_player = User::where('id', $next_participant->participant_id)->first();
         echo "Next participant: " . $next_participant->participant_id . "\n";
 
-        foreach ($participants AS $participant) {
-            $player = User::find($participant->participant_id);
+        foreach ($this->participants AS $participant) {
+            $user = User::find($participant->participant_id);
             if($participant->participant_id == $next_participant->participant_id) {
-                $bot->say("<@" . $this->user->slack_id . "> called $call", $player->slack_id);
-                $bot->say("Now it's your turn! Call or lift!", $player->slack_id);
-            }elseif($participant->participant_id == $current_participant->participant_id) {
-                $bot->say("You called $call..", $player->slack_id);
-                $bot->say("Now it's <@" . $next_player->slack_id . ">'s turn..", $player->slack_id);
+                $bot->say("<@" . $this->user->slack_id . "> called $this->current_call", $user->slack_id);
+                $bot->say("Now it's your turn! Call or lift!", $user->slack_id);
+            }elseif($participant->participant_id == $this->current_participant->participant_id) {
+                $bot->say("You called $this->current_call..", $user->slack_id);
+                $bot->say("Now it's <@" . $next_player->slack_id . ">'s turn..", $user->slack_id);
             }else{
-                $bot->say("<@" . $this->user->slack_id . "> called $call", $player->slack_id);
-                $bot->say("Now it's <@" . $next_player->slack_id . ">'s turn..", $player->slack_id);
+                $bot->say("<@" . $this->user->slack_id . "> called $this->current_call", $user->slack_id);
+                $bot->say("Now it's <@" . $next_player->slack_id . ">'s turn..", $user->slack_id);
             }
         }
 
@@ -247,7 +265,23 @@ class SnydController extends Controller
 
     public function endRound(BotMan $bot)
     {
+        $last_call = $this->calls->first();
 
+        // get all dice from current round
+        // get last call from last dude that the current dude didnt believe
+        // compare last call to all dice
+        // determine loser out of two players, all other players win and get one dice removed
+    }
+
+    public function abortGame(BotMan $bot)
+    {
+        // Getting the user
+        $this->user = User::where('slack_id', $bot->getUser()->getId())->first();
+
+        // get all dice from current round
+        // get last call from last dude that the current dude didnt believe
+        // compare last call to all dice
+        // determine loser out of two players, all other players win and get one dice removed
     }
 
     public function close(BotMan $bot)
