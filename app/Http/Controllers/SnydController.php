@@ -17,13 +17,16 @@ class SnydController extends Controller
     protected $calls;
     protected $first_round = false;
     protected $participants;
+    protected $current_call;
     protected $participant_count;
     protected $current_round_rolls;
     protected $current_participant;
     protected $current_round_participants;
+    protected $current_round_participant_count;
     protected $current_eligible_participant_order;
-    protected $current_call;
     protected $next_eligible_participant_order;
+    protected $next_participant;
+    protected $next_user;
 
     protected $emoji_numbers = [
         1 => ":one:",
@@ -192,7 +195,8 @@ class SnydController extends Controller
             ->get();
         $this->setCurrentRoundParticipants();
         $this->participant_count = $this->participants->count();
-        echo "Current round participant count: " . $this->current_round_participants->count() . "\n";
+        $this->current_round_participant_count = $this->current_round_participants->count();
+        echo "Current round participant count: " . $this->current_round_participant_count . "\n";
 
         $this->current_call = $bot->getMessage()->getText();
         echo "User called: " . $this->current_call . "\n";
@@ -206,7 +210,56 @@ class SnydController extends Controller
             $this->next_eligible_participant_order = 1;
         }else{
             // Find current & next eligible participant order
-            if($this->calls->first()->participant_order == ($this->participant_count-1)) {
+            $last_call = $this->calls->first();
+            if($last_call->call == 'snyd') {
+                // Figure out who lost, that person becomes current eligible participant
+                $this->current_eligible_participant_order = $this->current_round_participants
+                    ->where('participant_id', $last_call->loser_id)
+                    ->first()
+                    ->participant_order;
+                $current_eligible_participant_key = $this->current_round_participants
+                    ->where('participant_id', $last_call->loser_id)
+                    ->first()
+                    ->keys()[0];
+                if($current_eligible_participant_key == ($this->current_round_participant_count-1)) {
+                    $this->next_eligible_participant_order = $this->current_round_participants
+                        ->first()
+                        ->participant_order;
+                }else{
+                    $this->next_eligible_participant_order = $this->current_round_participants[$current_eligible_participant_key+1]
+                        ->participant_order;
+                }
+            }else{
+                $last_participant_key = $this->current_round_participants
+                    ->where('participant_id', $last_call->participant_id)
+                    ->first()
+                    ->keys()[0];
+                if($last_participant_key == ($this->current_round_participant_count-1)) {
+                    $this->current_eligible_participant_order = $this->current_round_participants
+                        ->first()
+                        ->participant_order;
+                }else{
+                    $this->current_eligible_participant_order = $this->current_round_participants[$last_participant_key+1]
+                        ->participant_order;
+                }
+                $current_eligible_participant_key = $this->current_round_participants
+                    ->where('participant_order', $this->current_eligible_participant_order)
+                    ->first()
+                    ->keys()[0];
+                if($current_eligible_participant_key == ($this->current_round_participant_count-1)) {
+                    $this->next_eligible_participant_order = $this->current_round_participants
+                        ->first()
+                        ->participant_order;
+                }else{
+                    $this->next_eligible_participant_order = $this->current_round_participants[$current_eligible_participant_key+1]
+                        ->participant_order;
+                }
+            }
+
+            $this->next_participant = $this->current_round_participants->where('participant_order', $this->next_eligible_participant_order)->first();
+            $this->next_user = User::find($this->next_participant->participant_id);
+
+            /*if($this->calls->first()->participant_order == ($this->participant_count-1)) {
                 $this->current_eligible_participant_order = 0;
                 $this->next_eligible_participant_order = 1;
             }else{
@@ -216,7 +269,8 @@ class SnydController extends Controller
                 }else{
                     $this->next_eligible_participant_order = $this->current_participant->participant_order + 1;
                 }
-            }
+            }*/
+
         }
 
         if($this->current_participant->participant_order !== $this->current_eligible_participant_order) {
@@ -253,21 +307,19 @@ class SnydController extends Controller
             $current_call->save();
         }
 
-        $next_participant = $this->participants->where('participant_order', $this->next_eligible_participant_order)->first();
-        $next_player = User::where('id', $next_participant->participant_id)->first();
-        echo "Next participant: " . $next_participant->participant_id . "\n";
+        echo "Next participant: " . $this->next_participant->participant_id . "\n";
 
         foreach ($this->participants AS $participant) {
             $user = User::find($participant->participant_id);
-            if($participant->participant_id == $next_participant->participant_id) {
+            if($participant->participant_id == $this->next_participant->participant_id) {
                 $bot->say("<@" . $this->user->slack_id . "> called $this->current_call", $user->slack_id);
                 $bot->say("Now it's your turn! Call or lift!", $user->slack_id);
             }elseif($participant->participant_id == $this->current_participant->participant_id) {
                 $bot->say("You called $this->current_call..", $user->slack_id);
-                $bot->say("Now it's <@" . $next_player->slack_id . ">'s turn..", $user->slack_id);
+                $bot->say("Now it's <@" . $this->next_user->slack_id . ">'s turn..", $user->slack_id);
             }else{
                 $bot->say("<@" . $this->user->slack_id . "> called $this->current_call", $user->slack_id);
-                $bot->say("Now it's <@" . $next_player->slack_id . ">'s turn..", $user->slack_id);
+                $bot->say("Now it's <@" . $this->next_user->slack_id . ">'s turn..", $user->slack_id);
             }
         }
 
@@ -319,10 +371,10 @@ class SnydController extends Controller
 
         echo "Hits: $hits \n";
 
-        $looser_id = $last_call->participant_id;
+        $loser_id = $last_call->participant_id;
         if($hits >= $dice_amount_to_look_for) {
             echo "Less hits, looser id is current user! \n";
-            $looser_id = $this->user->id;
+            $loser_id = $this->user->id;
         }
 
         $current_call = new Call;
@@ -330,24 +382,25 @@ class SnydController extends Controller
         $current_call->game_id = $this->game->id;
         $current_call->participant_id = $this->user->id;
         $current_call->participant_order = $this->current_participant->participant_order;
+        $current_call->loser_id = $loser_id;
         $current_call->save();
 
-        $this->initRound($bot, $this->current_round_participants, null, $this->current_round_rolls->first()->round + 1, $looser_id);
+        $this->initRound($bot, $this->current_round_participants, null, $this->current_round_rolls->first()->round + 1, $loser_id);
 
-        /*foreach ($this->current_round_participants as $participant) {
+        foreach ($this->current_round_participants as $participant) {
             $user = User::find($participant->participant_id);
-            if($participant->participant_id == $next_participant->participant_id) {
-                $bot->say("<@" . $this->user->slack_id . "> called snyd and " . ($looser_id == $this->user->id ? 'LOST' : 'WON') . "*!", $user->slack_id);
+            if($participant->participant_id == $this->next_participant->participant_id) {
+                $bot->say("<@" . $this->user->slack_id . "> called snyd and " . ($loser_id == $this->user->id ? 'LOST' : 'WON') . "*!", $user->slack_id);
                 $bot->say("Now it's your turn! Call or lift!", $user->slack_id);
             }elseif($participant->participant_id == $this->current_participant->participant_id) {
 
-                $bot->say("You called snyd and *" . ($looser_id == $this->user->id ? 'LOST' : 'WON') . "*!", $user->slack_id);
-                $bot->say("Now it's <@" . $next_player->slack_id . ">'s turn..", $user->slack_id);
+                $bot->say("You called snyd and *" . ($loser_id == $this->user->id ? 'LOST' : 'WON') . "*!", $user->slack_id);
+                $bot->say("Now it's <@" . $this->next_user->slack_id . ">'s turn..", $user->slack_id);
             }else{
-                $bot->say("<@" . $this->user->slack_id . "> called snyd and " . ($looser_id == $this->user->id ? 'LOST' : 'WON') . "*!", $user->slack_id);
-                $bot->say("Now it's <@" . $next_player->slack_id . ">'s turn..", $user->slack_id);
+                $bot->say("<@" . $this->user->slack_id . "> called snyd and " . ($loser_id == $this->user->id ? 'LOST' : 'WON') . "*!", $user->slack_id);
+                $bot->say("Now it's <@" . $this->next_user->slack_id . ">'s turn..", $user->slack_id);
             }
-        }*/
+        }
     }
 
     private function endGame(BotMan $bot, $looser_id) {
@@ -442,7 +495,7 @@ class SnydController extends Controller
         }
     }
 
-    private function initRound(BotMan $bot, $participants, $no_of_dice, $round, $looser_id = null) {
+    private function initRound(BotMan $bot, $participants, $no_of_dice, $round, $loser_id = null) {
         foreach ($participants AS $participant) {
             $player = User::find($participant->participant_id);
 
@@ -452,7 +505,7 @@ class SnydController extends Controller
                     ->orderBy('round', 'desc')
                     ->first();
                 $current_dice_count = count(json_decode($last_roll->roll));
-                if($current_dice_count == 1 && $looser_id != $participant->participant_id) {
+                if($current_dice_count == 1 && $loser_id != $participant->participant_id) {
                     // Participant currently being looped over won and will be removed from the game..
                     $bot->say("Hi, you won the game! Congrats! :meat_on_bone:", $player->slack_id);
                     foreach ($this->current_round_participants as $crp) {
@@ -462,13 +515,13 @@ class SnydController extends Controller
                         $user = User::find($crp->participant_id);
                         $bot->say("<@" . $player->slack_id . "> won and has been removed from the game!", $user->slack_id);
                         if($this->current_round_participants->count() - 1 == 1) {
-                            $this->endGame($bot, $looser_id);
+                            $this->endGame($bot, $loser_id);
                             return;
                         }
                     }
                     continue;
                 }else{
-                    if($looser_id == $participant->participant_id) {
+                    if($loser_id == $participant->participant_id) {
                         $dice_to_roll = $current_dice_count;
                     }else{
                         $dice_to_roll = $current_dice_count - 1;
