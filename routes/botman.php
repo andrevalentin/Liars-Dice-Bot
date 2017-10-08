@@ -18,6 +18,7 @@ $botman->hears('start game', \App\Http\Controllers\SnydController::class.'@start
 $botman->hears('([1-9]{0,1}[0-9]+,[0-6])', \App\Http\Controllers\SnydController::class.'@playRound');
 $botman->hears('lift', \App\Http\Controllers\SnydController::class.'@playRound');
 $botman->hears('abort game', \App\Http\Controllers\SnydController::class.'@abortGame');
+$botman->hears('say .+', \App\Http\Controllers\SnydController::class.'@say');
 
 $botman->hears('Show me a list of ongoing games', function($bot) {
     $games = Games::all();

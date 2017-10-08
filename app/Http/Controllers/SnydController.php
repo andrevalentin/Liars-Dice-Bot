@@ -291,23 +291,24 @@ class SnydController extends Controller
 
         $hits = 0;
         foreach ($this->current_round_rolls AS $rolls) {
-            foreach (json_decode($rolls->roll) AS $roll) {
 
-                //echo "Check roll: $roll \n";
-
-                // Checking for "Trappen" (ladder).
-                /*$ladder_counter = 1;
-                $dice_count = count($roll);
-                for ($c=0; $c<$dice_count; $c++) {
-                    if($roll[$c] == $ladder_counter) {
-                        $ladder_counter++;
-                    }
+            // Checking for "Trappen" (ladder).
+            /*$ladder_counter = 1;
+            $dice_count = count(json_decode($rolls->roll));
+            for ($c=0; $c<$dice_count; $c++) {
+                if(in_array($ladder_counter, json_decode($rolls->roll))) {
+                    $ladder_counter++;
                 }
-                if($ladder_counter == $dice_count) {
-                    $hits = $hits + $dice_count + 1;
-                    continue;
-                }*/
+            }
+            echo "Roll: $rolls->roll \n";
+            echo "Ladder counter: $ladder_counter \n";
+            echo "Dice counter: $dice_count \n";
+            if($ladder_counter == $dice_count) {
+                $hits = $hits + $dice_count + 1;
+                continue;
+            }*/
 
+            foreach (json_decode($rolls->roll) AS $roll) {
                 if($roll == 1) {
                     $hits++;
                 }elseif($roll == $dice_face_to_look_for) {
@@ -347,12 +348,6 @@ class SnydController extends Controller
                 $bot->say("Now it's <@" . $next_player->slack_id . ">'s turn..", $user->slack_id);
             }
         }*/
-
-        // get last call from last dude that the current dude didn't believe
-        // get all dice from current round
-        // compare last call to all dice
-        // determine loser out of two players, all other players win and get one dice removed
-        // roll again for all participants
     }
 
     private function endGame(BotMan $bot, $looser_id) {
@@ -360,7 +355,7 @@ class SnydController extends Controller
         foreach ($this->participants as $participant) {
             $user = User::find($participant->participant_id);
             if($looser_id == $participant->participant_id) {
-                $bot->say("You lost, betterl luck next time.. FeelsBadMan..", $user->slack_id);
+                $bot->say("You lost, better luck next time.. FeelsBadMan..", $user->slack_id);
             }else{
                 $bot->say("The game is over! <@" . $looser->slack_id . "> lost! Up for another game?", $user->slack_id);
             }
@@ -410,10 +405,40 @@ class SnydController extends Controller
 
         if(empty($game_check)) {
             $bot->reply("You are not currently hosting any open games, thus you cannot close any! :thinking_face:");
+            return;
         }else{
             $bot->reply(":scream: Okay, I'll cancel that game for you..");
             $game_check->state = 'cancelled';
             $game_check->save();
+        }
+    }
+
+    public function say(BotMan $bot) {
+        // Getting the user
+        $this->user = User::where('slack_id', $bot->getUser()->getId())->first();
+
+        $this->game = Game::where('state', 'live')
+            ->first();
+        if(empty($this->game)) {
+            $bot->reply("You are not currently participating in any games.");
+            return;
+        }
+
+        $this->current_participant = GameParticipant::where('game_id', $this->game->id)
+            ->where('participant_id', $this->user->id)
+            ->first();
+        if(empty($this->current_participant)) {
+            $bot->reply("You are not currently participating in any games.");
+            return;
+        }
+
+        $message = substr($bot->getMessage()->getText(), 4);
+        $this->participants = GameParticipant::where('game_id', $this->game->id)->get();
+        foreach ($this->participants as $participant) {
+            if($participant->participant_id != $this->user->id) {
+                $user = User::find($participant->participant_id);
+                $bot->say("<@" . $this->user->slack_id . "> says " . $message, $user->slack_id);
+            }
         }
     }
 
@@ -523,6 +548,11 @@ class SnydController extends Controller
             $user = User::find($participant->participant_id);
             $bot->say($message, $user->slack_id);
         }
+    }
+
+    private function determineParticipantOrder() {
+        // If no calls were made yet, take 0 and 1
+        // If a call was made
     }
 
 }
