@@ -173,10 +173,15 @@ class SnydController extends Controller
         $this->current_participant = GameParticipant::where('participant_id', $this->user->id)
             ->orderBy('created_at', 'desc')
             ->first();
+        if(empty($this->current_participant)) {
+            $bot->reply("Sorry, you don't seem to be in any live games.. Perhaps join or start one?");
+            return;
+        }
 
         $this->game = Game::find($this->current_participant->game_id);
         if(!isset($this->game) || $this->game->state != 'live') {
             $bot->reply("Sorry, you don't seem to be in any live games.. Perhaps join or start one?");
+            return;
         }
 
         $this->participants = GameParticipant::where('game_id', $this->game->id)
@@ -266,6 +271,8 @@ class SnydController extends Controller
     public function endRound(BotMan $bot)
     {
         $last_call = $this->calls->first();
+
+
 
         // get all dice from current round
         // get last call from last dude that the current dude didnt believe
