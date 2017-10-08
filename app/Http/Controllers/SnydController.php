@@ -18,7 +18,9 @@ class SnydController extends Controller
     protected $first_round = false;
     protected $participants;
     protected $participant_count;
+    protected $current_round_rolls;
     protected $current_participant;
+    protected $current_round_participants;
     protected $current_eligible_participant_order;
     protected $current_call;
     protected $next_eligible_participant_order;
@@ -58,6 +60,7 @@ class SnydController extends Controller
 
         $game = new Game;
         $game->host_id = $this->user->id;
+        $game->dice = 4;
         $game->save();
 
         $participant = new GameParticipant;
@@ -113,19 +116,19 @@ class SnydController extends Controller
         $this->user = User::where('slack_id', $bot->getUser()->getId())->first();
 
         // Getting the currently open game
-        $game = Game::where('state', 'open')
+        $this->game = Game::where('state', 'open')
             ->first();
-        if(empty($game)) {
+        if(empty($this->game)) {
             $bot->reply("There doesn't seem to be any games you can start right now.. :thinking_face: You could host one by asking if anyone wants to play?");
             return;
         }
 
-        if($game->host_id !== $this->user->id) {
+        if($this->game->host_id !== $this->user->id) {
             $bot->reply("You are trying to start a game which you are not the host of, for helved..");
             return;
         }
 
-        $participants = GameParticipant::where('game_id', $game->id)
+        $participants = GameParticipant::where('game_id', $this->game->id)
             ->get();
         $participant_count = count($participants);
         if($participant_count < 2) {
@@ -142,7 +145,7 @@ class SnydController extends Controller
                 $first_player = $player;
             }
 
-            GameParticipant::where('game_id', $game->id)
+            GameParticipant::where('game_id', $this->game->id)
                 ->where('participant_id', $participant->participant_id)
                 ->update([
                     'participant_order' => $key
@@ -157,10 +160,10 @@ class SnydController extends Controller
             }
         }
 
-        $game->state = 'live';
-        $game->save();
+        $this->game->state = 'live';
+        $this->game->save();
 
-        $this->initGame($bot, $shuffled_participants, $game->id);
+        $this->initRound($bot, $shuffled_participants, $this->game->dice, 0);
 
         $bot->reply("Game starting! Further instructions will be sent via DM..");
     }
@@ -187,7 +190,9 @@ class SnydController extends Controller
         $this->participants = GameParticipant::where('game_id', $this->game->id)
             ->orderBy('participant_order', 'asc')
             ->get();
+        $this->setCurrentRoundParticipants();
         $this->participant_count = $this->participants->count();
+        echo "Current round participant count: " . $this->current_round_participants->count() . "\n";
 
         $this->current_call = $bot->getMessage()->getText();
         echo "User called: " . $this->current_call . "\n";
@@ -219,7 +224,7 @@ class SnydController extends Controller
             return;
         }
 
-        if($this->current_call == 'lift') {
+        if(strtolower($this->current_call) == 'lift') {
             $this->endRound($bot);
         }else{
             $this->continueRound($bot);
@@ -236,7 +241,7 @@ class SnydController extends Controller
             $current_call->participant_order = $this->current_participant->participant_order;
             $current_call->save();
         }else{
-            if(!$this->compareTwoCalls($this->current_call, $this->calls->first()->call)) {
+            if($this->calls->first()->call != 'snyd' && !$this->compareTwoCalls($this->current_call, $this->calls->first()->call)) {
                 $bot->reply("You're call was lower than the person before you, please say something else..");
                 return;
             }
@@ -271,13 +276,98 @@ class SnydController extends Controller
     public function endRound(BotMan $bot)
     {
         $last_call = $this->calls->first();
+        $exp_last_call = explode(",", $last_call->call);
+        $dice_amount_to_look_for = $exp_last_call[0];
+        $dice_face_to_look_for = $exp_last_call[1];
 
+        $rolls = Roll::where('game_id', $this->game->id)
+            ->orderBy('round', 'desc')
+            ->get();
+        $this->current_round_rolls = $rolls->where('round', $rolls->first()->round)->flatten();
+        echo "Current round rolls: " . json_encode($this->current_round_rolls) . "\n";
 
+        echo "Dice amount to look for: $dice_amount_to_look_for \n";
+        echo "Dice face to look for: $dice_face_to_look_for \n";
 
+        $hits = 0;
+        foreach ($this->current_round_rolls AS $rolls) {
+            foreach (json_decode($rolls->roll) AS $roll) {
+
+                //echo "Check roll: $roll \n";
+
+                // Checking for "Trappen" (ladder).
+                /*$ladder_counter = 1;
+                $dice_count = count($roll);
+                for ($c=0; $c<$dice_count; $c++) {
+                    if($roll[$c] == $ladder_counter) {
+                        $ladder_counter++;
+                    }
+                }
+                if($ladder_counter == $dice_count) {
+                    $hits = $hits + $dice_count + 1;
+                    continue;
+                }*/
+
+                if($roll == 1) {
+                    $hits++;
+                }elseif($roll == $dice_face_to_look_for) {
+                    $hits++;
+                }
+            }
+        }
+
+        echo "Hits: $hits \n";
+
+        $looser_id = $last_call->participant_id;
+        if($hits >= $dice_amount_to_look_for) {
+            echo "Less hits, looser id is current user! \n";
+            $looser_id = $this->user->id;
+        }
+
+        $current_call = new Call;
+        $current_call->call = 'snyd';
+        $current_call->game_id = $this->game->id;
+        $current_call->participant_id = $this->user->id;
+        $current_call->participant_order = $this->current_participant->participant_order;
+        $current_call->save();
+
+        $this->initRound($bot, $this->current_round_participants, null, $this->current_round_rolls->first()->round + 1, $looser_id);
+
+        /*foreach ($this->current_round_participants as $participant) {
+            $user = User::find($participant->participant_id);
+            if($participant->participant_id == $next_participant->participant_id) {
+                $bot->say("<@" . $this->user->slack_id . "> called snyd and " . ($looser_id == $this->user->id ? 'LOST' : 'WON') . "*!", $user->slack_id);
+                $bot->say("Now it's your turn! Call or lift!", $user->slack_id);
+            }elseif($participant->participant_id == $this->current_participant->participant_id) {
+
+                $bot->say("You called snyd and *" . ($looser_id == $this->user->id ? 'LOST' : 'WON') . "*!", $user->slack_id);
+                $bot->say("Now it's <@" . $next_player->slack_id . ">'s turn..", $user->slack_id);
+            }else{
+                $bot->say("<@" . $this->user->slack_id . "> called snyd and " . ($looser_id == $this->user->id ? 'LOST' : 'WON') . "*!", $user->slack_id);
+                $bot->say("Now it's <@" . $next_player->slack_id . ">'s turn..", $user->slack_id);
+            }
+        }*/
+
+        // get last call from last dude that the current dude didn't believe
         // get all dice from current round
-        // get last call from last dude that the current dude didnt believe
         // compare last call to all dice
         // determine loser out of two players, all other players win and get one dice removed
+        // roll again for all participants
+    }
+
+    private function endGame(BotMan $bot, $looser_id) {
+        $looser = User::find($looser_id);
+        foreach ($this->participants as $participant) {
+            $user = User::find($participant->participant_id);
+            if($looser_id == $participant->participant_id) {
+                $bot->say("You lost, betterl luck next time.. FeelsBadMan..", $user->slack_id);
+            }else{
+                $bot->say("The game is over! <@" . $looser->slack_id . "> lost! Up for another game?", $user->slack_id);
+            }
+        }
+        // Setting the game state to be over.
+        $this->game->state = 'concluded';
+        $this->game->save();
     }
 
     public function abortGame(BotMan $bot)
@@ -285,10 +375,27 @@ class SnydController extends Controller
         // Getting the user
         $this->user = User::where('slack_id', $bot->getUser()->getId())->first();
 
-        // get all dice from current round
-        // get last call from last dude that the current dude didnt believe
-        // compare last call to all dice
-        // determine loser out of two players, all other players win and get one dice removed
+        // Check if a game is LIVE where the current user is HOST
+        $game_check = Game::where('state', 'live')
+            ->where('host_id', $this->user->id)
+            ->first();
+
+        if(empty($game_check)) {
+            $bot->reply("You are not currently hosting any open games, thus you cannot abort any! :thinking_face:");
+        }else{
+            $bot->reply(":scream: Okay, I'll abort that game for you..");
+            $game_check->state = 'aborted';
+            $game_check->save();
+
+            $participants = GameParticipant::where('game_id', $game_check)->get();
+            foreach ($participants AS $participant) {
+                if($participant->participant_id == $this->user->id) {
+                    continue;
+                }
+                $user = User::find($participant->participant_id);
+                $bot->say("Your current game was aborted by the host! Please start a new game to continue playing..", $user->slack_id);
+            }
+        }
     }
 
     public function close(BotMan $bot)
@@ -304,21 +411,55 @@ class SnydController extends Controller
         if(empty($game_check)) {
             $bot->reply("You are not currently hosting any open games, thus you cannot close any! :thinking_face:");
         }else{
-            $bot->reply(":scream: Okay, I'll close that game for you..");
-            $game_check->state = 'aborted';
+            $bot->reply(":scream: Okay, I'll cancel that game for you..");
+            $game_check->state = 'cancelled';
             $game_check->save();
         }
     }
 
-    private function initGame(BotMan $bot, $participants, $game_id) {
+    private function initRound(BotMan $bot, $participants, $no_of_dice, $round, $looser_id = null) {
         foreach ($participants AS $participant) {
             $player = User::find($participant->participant_id);
-            $dice = $this->rollDice();
+
+            if($round > 0) {
+                $last_roll = Roll::where('game_id', $this->game->id)
+                    ->where('participant_id', $participant->participant_id)
+                    ->orderBy('round', 'desc')
+                    ->first();
+                $current_dice_count = count(json_decode($last_roll->roll));
+                if($current_dice_count == 1 && $looser_id != $participant->participant_id) {
+                    // Participant currently being looped over won and will be removed from the game..
+                    $bot->say("Hi, you won the game! Congrats! :meat_on_bone:", $player->slack_id);
+                    foreach ($this->current_round_participants as $crp) {
+                        if($crp == $participant) {
+                            continue;
+                        }
+                        $user = User::find($crp->participant_id);
+                        $bot->say("<@" . $player->slack_id . "> won and has been removed from the game!", $user->slack_id);
+                        if($this->current_round_participants->count() - 1 == 1) {
+                            $this->endGame($bot, $looser_id);
+                            return;
+                        }
+                    }
+                    continue;
+                }else{
+                    if($looser_id == $participant->participant_id) {
+                        $dice_to_roll = $current_dice_count;
+                    }else{
+                        $dice_to_roll = $current_dice_count - 1;
+                    }
+                }
+            }else{
+                $dice_to_roll = $no_of_dice;
+            }
+
+            $dice = $this->rollDice($dice_to_roll);
 
             $roll = new Roll;
             $roll->roll = json_encode($dice);
-            $roll->game_id = $game_id;
+            $roll->game_id = $this->game->id;
             $roll->participant_id = $participant->participant_id;
+            $roll->round = $round;
             $roll->save();
 
             $emoji_dice = "";
@@ -362,8 +503,26 @@ class SnydController extends Controller
         }
     }
 
-    private function getNextTurnUser() {
+    private function setCurrentRoundParticipants() {
+        if(!isset($this->participants)) {
+            throw new \Exception("You cannot call setCurrentRoundParticipants without having set participants first!");
+        }
+        $rolls = Roll::where('game_id', $this->game->id)
+            ->orderBy('round', 'desc')
+            ->get();
+        $this->current_round_rolls = $rolls->where('round', $rolls->first()->round)->flatten();
+        $this->current_round_participants = collect();
+        foreach ($this->current_round_rolls AS $current_round_participant) {
+            $this->current_round_participants->push($this->participants->where('participant_id', $current_round_participant->participant_id)->first());
+        }
+        $this->current_round_participants = $this->current_round_participants->sortBy('participant_order');
+    }
 
+    private function announceMessageToParticipants($bot, $participants, $message) {
+        foreach ($participants as $participant) {
+            $user = User::find($participant->participant_id);
+            $bot->say($message, $user->slack_id);
+        }
     }
 
 }
