@@ -382,17 +382,19 @@ class SnydController extends Controller
 
         $this->initRound($bot, $this->current_round_participants, null, $this->current_round_rolls->first()->round + 1, $loser_id);
 
+        $this->next_participant = $this->current_round_participants->where('participant_id', $loser_id)->first();
+        $this->next_user = User::find($loser_id);
+
         foreach ($this->current_round_participants as $participant) {
             $user = User::find($participant->participant_id);
             if($participant->participant_id == $this->next_participant->participant_id) {
-                $bot->say("<@" . $this->user->slack_id . "> called snyd and " . ($loser_id == $this->user->id ? 'LOST' : 'WON') . "*!", $user->slack_id);
+                $bot->say("<@" . $this->user->slack_id . "> called snyd and *" . ($loser_id == $this->user->id ? 'LOST' : 'WON') . "*!", $user->slack_id);
                 $bot->say("Now it's your turn! Call or lift!", $user->slack_id);
             }elseif($participant->participant_id == $this->current_participant->participant_id) {
-
                 $bot->say("You called snyd and *" . ($loser_id == $this->user->id ? 'LOST' : 'WON') . "*!", $user->slack_id);
                 $bot->say("Now it's <@" . $this->next_user->slack_id . ">'s turn..", $user->slack_id);
             }else{
-                $bot->say("<@" . $this->user->slack_id . "> called snyd and " . ($loser_id == $this->user->id ? 'LOST' : 'WON') . "*!", $user->slack_id);
+                $bot->say("<@" . $this->user->slack_id . "> called snyd and *" . ($loser_id == $this->user->id ? 'LOST' : 'WON') . "*!", $user->slack_id);
                 $bot->say("Now it's <@" . $this->next_user->slack_id . ">'s turn..", $user->slack_id);
             }
         }
