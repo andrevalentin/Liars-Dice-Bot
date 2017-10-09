@@ -217,10 +217,9 @@ class SnydController extends Controller
                     ->where('participant_id', $last_call->loser_id)
                     ->first()
                     ->participant_order;
-                $current_eligible_participant_key = $this->current_round_participants
+                $current_eligible_participant_key = key($this->current_round_participants
                     ->where('participant_id', $last_call->loser_id)
-                    ->first()
-                    ->keys()[0];
+                    ->all());
                 if($current_eligible_participant_key == ($this->current_round_participant_count-1)) {
                     $this->next_eligible_participant_order = $this->current_round_participants
                         ->first()
@@ -230,10 +229,9 @@ class SnydController extends Controller
                         ->participant_order;
                 }
             }else{
-                $last_participant_key = $this->current_round_participants
+                $last_participant_key = key($this->current_round_participants
                     ->where('participant_id', $last_call->participant_id)
-                    ->first()
-                    ->keys()[0];
+                    ->all());
                 if($last_participant_key == ($this->current_round_participant_count-1)) {
                     $this->current_eligible_participant_order = $this->current_round_participants
                         ->first()
@@ -242,10 +240,9 @@ class SnydController extends Controller
                     $this->current_eligible_participant_order = $this->current_round_participants[$last_participant_key+1]
                         ->participant_order;
                 }
-                $current_eligible_participant_key = $this->current_round_participants
+                $current_eligible_participant_key = key($this->current_round_participants
                     ->where('participant_order', $this->current_eligible_participant_order)
-                    ->first()
-                    ->keys()[0];
+                    ->all());
                 if($current_eligible_participant_key == ($this->current_round_participant_count-1)) {
                     $this->next_eligible_participant_order = $this->current_round_participants
                         ->first()
@@ -255,9 +252,6 @@ class SnydController extends Controller
                         ->participant_order;
                 }
             }
-
-            $this->next_participant = $this->current_round_participants->where('participant_order', $this->next_eligible_participant_order)->first();
-            $this->next_user = User::find($this->next_participant->participant_id);
 
             /*if($this->calls->first()->participant_order == ($this->participant_count-1)) {
                 $this->current_eligible_participant_order = 0;
@@ -272,6 +266,9 @@ class SnydController extends Controller
             }*/
 
         }
+
+        $this->next_participant = $this->current_round_participants->where('participant_order', $this->next_eligible_participant_order)->first();
+        $this->next_user = User::find($this->next_participant->participant_id);
 
         if($this->current_participant->participant_order !== $this->current_eligible_participant_order) {
             $bot->reply("It's not your turn yet, please wait!");
@@ -306,8 +303,6 @@ class SnydController extends Controller
             $current_call->participant_order = $this->current_participant->participant_order;
             $current_call->save();
         }
-
-        echo "Next participant: " . $this->next_participant->participant_id . "\n";
 
         foreach ($this->participants AS $participant) {
             $user = User::find($participant->participant_id);
