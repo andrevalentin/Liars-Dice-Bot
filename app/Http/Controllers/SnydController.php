@@ -18,6 +18,7 @@ class SnydController extends Controller
     protected $first_round = false;
     protected $participants;
     protected $current_call;
+    protected $dice_left_in_game;
     protected $participant_count;
     protected $current_round_rolls;
     protected $current_participant;
@@ -392,13 +393,13 @@ class SnydController extends Controller
         foreach ($this->current_round_participants as $participant) {
             $user = User::find($participant->participant_id);
             if($participant->participant_id == $this->next_participant->participant_id) {
-                $bot->say("<@" . $this->user->slack_id . "> called snyd and *" . ($loser_id == $this->user->id ? 'LOST' : 'WON') . "*!", $user->slack_id);
+                $bot->say("<@" . $this->user->slack_id . "> called snyd and *" . ($loser_id == $this->user->id ? 'LOST' : 'WON') . "*! There are *" . $this->dice_left_in_game . "* dice left..", $user->slack_id);
                 $bot->say("Now it's your turn! Call or lift!", $user->slack_id);
             }elseif($participant->participant_id == $this->current_participant->participant_id) {
-                $bot->say("You called snyd and *" . ($loser_id == $this->user->id ? 'LOST' : 'WON') . "*!", $user->slack_id);
+                $bot->say("You called snyd and *" . ($loser_id == $this->user->id ? 'LOST' : 'WON') . "*! There are *" . $this->dice_left_in_game . "* dice left..", $user->slack_id);
                 $bot->say("Now it's <@" . $this->next_user->slack_id . ">'s turn..", $user->slack_id);
             }else{
-                $bot->say("<@" . $this->user->slack_id . "> called snyd and *" . ($loser_id == $this->user->id ? 'LOST' : 'WON') . "*!", $user->slack_id);
+                $bot->say("<@" . $this->user->slack_id . "> called snyd and *" . ($loser_id == $this->user->id ? 'LOST' : 'WON') . "*! There are *" . $this->dice_left_in_game . "* dice left..", $user->slack_id);
                 $bot->say("Now it's <@" . $this->next_user->slack_id . ">'s turn..", $user->slack_id);
             }
         }
@@ -550,6 +551,7 @@ class SnydController extends Controller
     }
 
     private function rollDice($no_of_dice = 4) {
+        $this->dice_left_in_game += $no_of_dice;
         $rolls = [];
         for ($c = 0; $c != $no_of_dice; $c++) {
             $roll = rand(1, 6);
