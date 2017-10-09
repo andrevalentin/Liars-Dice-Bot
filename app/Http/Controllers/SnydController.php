@@ -382,6 +382,10 @@ class SnydController extends Controller
 
         $this->initRound($bot, $this->current_round_participants, null, $this->current_round_rolls->first()->round + 1, $loser_id);
 
+        if($this->game->state == 'concluded') {
+            return;
+        }
+
         $this->next_participant = $this->current_round_participants->where('participant_id', $loser_id)->first();
         $this->next_user = User::find($loser_id);
 
