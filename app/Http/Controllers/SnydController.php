@@ -341,22 +341,21 @@ class SnydController extends Controller
         foreach ($this->current_round_rolls AS $rolls) {
 
             // Checking for "Trappen" (ladder).
-            /*$ladder_counter = 1;
-            $dice_count = count(json_decode($rolls->roll));
-            for ($c=0; $c<$dice_count; $c++) {
-                if(in_array($ladder_counter, json_decode($rolls->roll))) {
+            $current_roll = json_decode($rolls->roll);
+            $dice_count = count($current_roll);
+            $ladder_counter = 1;
+            sort($current_roll);
+            foreach ($current_roll as $roll) {
+                if($ladder_counter == $roll) {
                     $ladder_counter++;
                 }
             }
-            echo "Roll: $rolls->roll \n";
-            echo "Ladder counter: $ladder_counter \n";
-            echo "Dice counter: $dice_count \n";
-            if($ladder_counter == $dice_count) {
-                $hits = $hits + $dice_count + 1;
+            if($ladder_counter == ($dice_count+1)) {
+                $hits = $hits + $ladder_counter;
                 continue;
-            }*/
+            }
 
-            foreach (json_decode($rolls->roll) AS $roll) {
+            foreach (json_decode($rolls->roll) as $roll) {
                 if($roll == 1) {
                     $hits++;
                 }elseif($roll == $dice_face_to_look_for) {
