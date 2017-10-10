@@ -38,50 +38,63 @@ class SnydController extends Controller
         6 => ":six:",
     ];
 
-    public function init(BotMan $bot)
-    {
-        echo "User " . $bot->getUser()->getUsername() . " sent a message!\n";
-        $this->user = User::updateOrCreate(
-            [
-                "slack_id" => $bot->getUser()->getId()
-            ],
-            [
-                "username" => $bot->getUser()->getUsername()
-            ]
-        );
-    }
-
     public function host(BotMan $bot)
     {
-        // Getting the user
-        $this->user = User::where('slack_id', $bot->getUser()->getId())->first();
+        $this->handleUser($bot);
 
-        $open_game_check = Game::where('state', 'open')->first();
-        if(!empty($open_game_check)) {
-            $bot->reply("Another open game is currently recruiting players.. It has to start before you can start another! Type \"me\" to join that game!");
+        $open_game = Game::where('state', 'open')->first();
+        if(!empty($open_game)) {
+            $open_host = User::find($open_game->host_id);
+            $bot->reply("Another open game is currently recruiting players, <@" . $open_host->slack_id . "> is hosting.. It has to start before you can start another! Type \"me\" to join that game!");
             return;
         }
 
-        $game = new Game;
-        $game->host_id = $this->user->id;
-        $game->dice = 4;
-        $game->save();
+        // Setting game defaults
+        $dice_count = 4;
+        $staircase_enabled = 1;
 
-        $participant = new GameParticipant;
-        $participant->game_id = $game->id;
-        $participant->participant_id = $this->user->id;
-        $participant->save();
+        // Take bot message and get rid of the "host snyd" part, only keeping any arguments it might contain.
+        $message = substr($bot->getMessage()->getText(), 9);
+        // Check if there could even possibly be any arguments after the "host snyd" message.
+        preg_match_all("/--\w+=\w+/", $message, $matches);
+        if(count($matches)) {
+            // Here we want to look for any arguments in the following format "--key=value"
+            foreach($matches[0] as $arg){
+                // Checking if we should change the default dice from 4 to another value this game.
+                if(substr($arg, 0, 7) == "--dice=") {
+                    if(is_numeric(substr($arg, 7)) && substr($arg, 7) <= 20) {
+                        $dice_count = substr($arg, 7);
+                    }
+                }
+                // Checking if we should disable the staircase (trappen) for this game.
+                if(substr($arg, 0, 12) == "--staircase=") {
+                    if(substr($arg, 12) == "false") {
+                        $staircase_enabled = 0;
+                    }
+                }
+            }
+        }
 
-        echo "New game of Snyd starting! ID: $game->id Host: $game->host_id \n";
+        $this->game = new Game;
+        $this->game->host_id = $this->user->id;
+        $this->game->dice = $dice_count;
+        $this->game->staircase_enabled = $staircase_enabled;
+        $this->game->save();
 
-        $bot->reply("Let's play Snyd! <@" . $this->user->slack_id . "> is hosting.. This is game number #$game->id! Type \"me\" to join!");
+        $this->current_participant = new GameParticipant;
+        $this->current_participant->game_id = $this->game->id;
+        $this->current_participant->participant_id = $this->user->id;
+        $this->current_participant->save();
+
+        echo "[INFO] New game of Snyd starting! ID: " . $this->game->id . " Host: " . $this->user->username . "\n";
+
+        $bot->reply("Let's play Snyd! <@" . $this->user->slack_id . "> is hosting.. This is game number #" . $this->game->id . "! Type \"me\" to join!");
         return;
     }
 
     public function join(BotMan $bot)
     {
-        // Getting the user
-        $this->user = User::where('slack_id', $bot->getUser()->getId())->first();
+        $this->handleUser($bot);
 
         // Getting the currently open game
         $game = Game::where('state', 'open')
@@ -116,8 +129,7 @@ class SnydController extends Controller
     // Method for the host of an game with an open game state, to start a game.
     public function start(BotMan $bot)
     {
-        // Getting the user
-        $this->user = User::where('slack_id', $bot->getUser()->getId())->first();
+        $this->handleUser($bot);
 
         // Getting the currently open game
         $this->game = Game::where('state', 'open')
@@ -174,8 +186,7 @@ class SnydController extends Controller
 
     public function playRound(BotMan $bot)
     {
-        // Getting the user
-        $this->user = User::where('slack_id', $bot->getUser()->getId())->first();
+        $this->handleUser($bot);
 
         $this->current_participant = GameParticipant::where('participant_id', $this->user->id)
             ->orderBy('created_at', 'desc')
@@ -230,6 +241,7 @@ class SnydController extends Controller
                         ->participant_order;
                 }
             }else{
+                // Get the array position of the last player
                 $last_participant_key = key($this->current_round_participants
                     ->where('participant_id', $last_call->participant_id)
                     ->all());
@@ -253,19 +265,6 @@ class SnydController extends Controller
                         ->participant_order;
                 }
             }
-
-            /*if($this->calls->first()->participant_order == ($this->participant_count-1)) {
-                $this->current_eligible_participant_order = 0;
-                $this->next_eligible_participant_order = 1;
-            }else{
-                $this->current_eligible_participant_order = $this->calls->first()->participant_order + 1;
-                if($this->current_participant->participant_order == ($this->participant_count-1)) {
-                    $this->next_eligible_participant_order = 0;
-                }else{
-                    $this->next_eligible_participant_order = $this->current_participant->participant_order + 1;
-                }
-            }*/
-
         }
 
         $this->next_participant = $this->current_round_participants->where('participant_order', $this->next_eligible_participant_order)->first();
@@ -340,19 +339,21 @@ class SnydController extends Controller
         $hits = 0;
         foreach ($this->current_round_rolls AS $rolls) {
 
-            // Checking for "Trappen" (ladder).
-            $current_roll = json_decode($rolls->roll);
-            $dice_count = count($current_roll);
-            $ladder_counter = 1;
-            sort($current_roll);
-            foreach ($current_roll as $roll) {
-                if($ladder_counter == $roll) {
-                    $ladder_counter++;
+            if($this->game->staircase_enabled) {
+                // Checking for "Trappen" (ladder).
+                $current_roll = json_decode($rolls->roll);
+                $dice_count = count($current_roll);
+                $ladder_counter = 1;
+                sort($current_roll);
+                foreach ($current_roll as $roll) {
+                    if($ladder_counter == $roll) {
+                        $ladder_counter++;
+                    }
                 }
-            }
-            if($ladder_counter == ($dice_count+1)) {
-                $hits = $hits + $ladder_counter;
-                continue;
+                if($ladder_counter == ($dice_count+1)) {
+                    $hits = $hits + $ladder_counter;
+                    continue;
+                }
             }
 
             foreach (json_decode($rolls->roll) as $roll) {
@@ -404,7 +405,8 @@ class SnydController extends Controller
         }
     }
 
-    private function endGame(BotMan $bot, $looser_id) {
+    private function endGame(BotMan $bot, $looser_id)
+    {
         $looser = User::find($looser_id);
         foreach ($this->participants as $participant) {
             $user = User::find($participant->participant_id);
@@ -421,8 +423,7 @@ class SnydController extends Controller
 
     public function abortGame(BotMan $bot)
     {
-        // Getting the user
-        $this->user = User::where('slack_id', $bot->getUser()->getId())->first();
+        $this->handleUser($bot);
 
         // Check if a game is LIVE where the current user is HOST
         $game_check = Game::where('state', 'live')
@@ -449,8 +450,7 @@ class SnydController extends Controller
 
     public function close(BotMan $bot)
     {
-        // Getting the user
-        $this->user = User::where('slack_id', $bot->getUser()->getId())->first();
+        $this->handleUser($bot);
 
         // Check if a game is OPEN where the current user is HOST
         $game_check = Game::where('state', 'open')
@@ -467,9 +467,9 @@ class SnydController extends Controller
         }
     }
 
-    public function say(BotMan $bot) {
-        // Getting the user
-        $this->user = User::where('slack_id', $bot->getUser()->getId())->first();
+    public function say(BotMan $bot)
+    {
+        $this->handleUser($bot);
 
         $this->game = Game::where('state', 'live')
             ->first();
@@ -549,7 +549,8 @@ class SnydController extends Controller
         }
     }
 
-    private function rollDice($no_of_dice = 4) {
+    private function rollDice($no_of_dice = 4)
+    {
         $this->dice_left_in_game += $no_of_dice;
         $rolls = [];
         for ($c = 0; $c != $no_of_dice; $c++) {
@@ -559,7 +560,8 @@ class SnydController extends Controller
         return $rolls;
     }
 
-    private function compareTwoCalls($current_call, $previous_call) {
+    private function compareTwoCalls($current_call, $previous_call)
+    {
         $exp_current_call = explode(",", $current_call);
         $exp_previous_call = explode(",", $previous_call);
 
@@ -583,31 +585,41 @@ class SnydController extends Controller
         }
     }
 
-    private function setCurrentRoundParticipants() {
-        if(!isset($this->participants)) {
-            throw new \Exception("You cannot call setCurrentRoundParticipants without having set participants first!");
+    private function setCurrentRoundParticipants()
+    {
+        if(!isset($this->participants) || !isset($this->game)) {
+            throw new \Exception("You cannot call setCurrentRoundParticipants without having set participants and game first!");
         }
+
+        // Get all rolls in a specific game, ordered by round.
         $rolls = Roll::where('game_id', $this->game->id)
             ->orderBy('round', 'desc')
             ->get();
+        // Here we strip away all rolls that do not belong to the most recent round.
         $this->current_round_rolls = $rolls->where('round', $rolls->first()->round)->flatten();
+        // Initiating current round participants collection.
+        // In the following foreach we take all rolls of the current round, one by one,
+        // and insert the owners participant model into the above mentioned collection.
         $this->current_round_participants = collect();
         foreach ($this->current_round_rolls AS $current_round_participant) {
             $this->current_round_participants->push($this->participants->where('participant_id', $current_round_participant->participant_id)->first());
         }
+        // Lastly we make sure that the order of the participants is set correctly
         $this->current_round_participants = $this->current_round_participants->sortBy('participant_order');
+        echo "[DEBUG] Current round participants: " . json_encode($this->current_round_participants) . "\n";
     }
 
-    private function announceMessageToParticipants($bot, $participants, $message) {
-        foreach ($participants as $participant) {
-            $user = User::find($participant->participant_id);
-            $bot->say($message, $user->slack_id);
-        }
-    }
-
-    private function determineParticipantOrder() {
-        // If no calls were made yet, take 0 and 1
-        // If a call was made
+    private function handleUser(BotMan $bot)
+    {
+        echo "[INFO] User " . $bot->getUser()->getUsername() . " sent a message!\n";
+        $this->user = User::updateOrCreate(
+            [
+                "slack_id" => $bot->getUser()->getId()
+            ],
+            [
+                "username" => $bot->getUser()->getUsername()
+            ]
+        );
     }
 
 }
