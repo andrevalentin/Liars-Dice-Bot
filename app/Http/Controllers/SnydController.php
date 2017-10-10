@@ -331,10 +331,9 @@ class SnydController extends Controller
             ->orderBy('round', 'desc')
             ->get();
         $this->current_round_rolls = $rolls->where('round', $rolls->first()->round)->flatten();
-        echo "Current round rolls: " . json_encode($this->current_round_rolls) . "\n";
 
-        echo "Dice amount to look for: $dice_amount_to_look_for \n";
-        echo "Dice face to look for: $dice_face_to_look_for \n";
+        echo "[INFO] Dice amount to look for: $dice_amount_to_look_for \n";
+        echo "[INFO] Dice face to look for: $dice_face_to_look_for \n";
 
         $hits = 0;
         foreach ($this->current_round_rolls AS $rolls) {
@@ -365,11 +364,10 @@ class SnydController extends Controller
             }
         }
 
-        echo "Hits: $hits \n";
+        echo "[INFO] Hits: $hits \n";
 
         $loser_id = $last_call->participant_id;
         if($hits >= $dice_amount_to_look_for) {
-            echo "Less hits, looser id is current user! \n";
             $loser_id = $this->user->id;
         }
 
