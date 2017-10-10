@@ -515,7 +515,8 @@ class SnydController extends Controller
                         }
                         $user = User::find($crp->participant_id);
                         $bot->say("<@" . $player->slack_id . "> won and has been removed from the game!", $user->slack_id);
-                        if($this->current_round_participants->count() - 1 == 1) {
+                        $this->current_round_participant_count = $this->current_round_participant_count - 1;
+                        if($this->current_round_participant_count == 1) {
                             $this->endGame($bot, $loser_id);
                             return;
                         }
