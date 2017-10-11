@@ -338,7 +338,7 @@ class SnydController extends Controller
         $hits = 0;
         foreach ($this->current_round_rolls AS $rolls) {
 
-            if($this->game->staircase_enabled) {
+            if($this->game->staircase_enabled && $dice_face_to_look_for != 1) {
                 // Checking for "Trappen" (ladder).
                 $current_roll = json_decode($rolls->roll);
                 $dice_count = count($current_roll);
