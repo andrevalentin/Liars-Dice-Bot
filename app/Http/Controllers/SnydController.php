@@ -97,20 +97,20 @@ class SnydController extends Controller
         $this->handleUser($bot);
 
         // Getting the currently open game
-        $game = Game::where('state', 'open')
+        $this->game = Game::where('state', 'open')
             ->first();
-        if(empty($game)) {
+        if(empty($this->game)) {
             $bot->reply("There doesn't seem to be any open games right now.. :thinking_face: You could host one by asking if anyone wants to play?");
             return;
         }
 
-        if($game->host_id === $this->user->id) {
+        if($this->game->host_id === $this->user->id) {
             $bot->reply("You are trying to join your own game.. FeelsBadMan..");
             return;
         }
 
         // At this point we KNOW that the user who is trying to join CAN join
-        $current_participant_check = GameParticipant::where('game_id', $game->id)
+        $current_participant_check = GameParticipant::where('game_id', $this->game->id)
             ->where('participant_id', $this->user->id)
             ->first();
         if(!empty($current_participant_check)) {
@@ -119,11 +119,41 @@ class SnydController extends Controller
         }
 
         $participant = new GameParticipant;
-        $participant->game_id = $game->id;
+        $participant->game_id = $this->game->id;
         $participant->participant_id = $this->user->id;
         $participant->save();
 
         $bot->reply("You have successfully joined the game.. please wait for the host to start it!");
+    }
+
+    public function leave(BotMan $bot)
+    {
+        $this->handleUser($bot);
+
+        // Getting the currently open game
+        $this->game = Game::where('state', 'open')
+            ->first();
+        if(empty($this->game)) {
+            $bot->reply("There doesn't seem to be any open games you can leave right now..");
+            return;
+        }
+
+        if($this->game->host_id === $this->user->id) {
+            $bot->reply("You can't leave your own game?! You can close it if you want to... :cry:");
+            return;
+        }
+
+        $this->current_participant = GameParticipant::where('game_id', $this->game->id)
+            ->where('participant_id', $this->user->id)
+            ->first();
+        if(empty($this->current_participant)) {
+            $bot->reply("There doesn't seem to be any open games you can leave right now..");
+            return;
+        }
+
+        GameParticipant::destroy($this->current_participant->id);
+
+        $bot->reply("You left the game, great..");
     }
 
     // Method for the host of an game with an open game state, to start a game.

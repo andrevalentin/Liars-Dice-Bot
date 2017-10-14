@@ -6,6 +6,7 @@ $botman = resolve('botman');
 $botman->hears('host snyd.*', \App\Http\Controllers\SnydController::class.'@host');
 $botman->hears('close game', \App\Http\Controllers\SnydController::class.'@close');
 $botman->hears('me', \App\Http\Controllers\SnydController::class.'@join');
+$botman->hears('leave', \App\Http\Controllers\SnydController::class.'@leave');
 $botman->hears('start game', \App\Http\Controllers\SnydController::class.'@start');
 
 // routes should exclusively work in the private message between the bot and the user
