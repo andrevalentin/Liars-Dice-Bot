@@ -4,9 +4,9 @@ namespace App\Http\Controllers;
 
 use App\Models\Call;
 use App\Models\Game;
-use App\Models\GameParticipant;
 use App\Models\Roll;
 use App\Models\User;
+use App\Models\GameParticipant;
 use BotMan\BotMan\BotMan;
 
 class SnydController extends Controller
@@ -210,7 +210,7 @@ class SnydController extends Controller
         $this->current_round_participant_count = $this->current_round_participants->count();
         echo "[INFO] Current round participant count: " . $this->current_round_participant_count . "\n";
 
-        $this->current_call = $bot->getMessage()->getText();
+        $this->current_call = strtolower(trim($bot->getMessage()->getText()));
         echo "[INFO] User called: " . $this->current_call . "\n";
 
         $this->calls = Call::where('game_id', $this->game->id)
@@ -275,7 +275,7 @@ class SnydController extends Controller
             return;
         }
 
-        if(strtolower($this->current_call) == 'lift') {
+        if($this->current_call == 'lift') {
             $this->endRound($bot);
         }else{
             $this->continueRound($bot);
