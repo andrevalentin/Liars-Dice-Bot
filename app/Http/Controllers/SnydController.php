@@ -469,17 +469,27 @@ class SnydController extends Controller
     {
         $this->handleUser($bot);
 
-        $this->game = Game::where('state', 'live')
-            ->first();
-        if(empty($this->game)) {
+        $games = Game::where('state', 'live')
+            ->get();
+        if(empty($games)) {
             $bot->reply("You are not currently participating in any games.");
             return;
         }
 
-        $this->current_participant = GameParticipant::where('game_id', $this->game->id)
-            ->where('participant_id', $this->user->id)
-            ->first();
-        if(empty($this->current_participant)) {
+        $participating_in_game = false;
+        foreach ($games AS $game) {
+            $participant = GameParticipant::where('game_id', $this->game->id)
+                ->where('participant_id', $this->user->id)
+                ->first();
+            if(!empty($participant)) {
+                $this->game = $game;
+                $this->current_participant = $participant;
+                $participating_in_game = true;
+                break;
+            }
+        }
+
+        if(!$participating_in_game) {
             $bot->reply("You are not currently participating in any games.");
             return;
         }
