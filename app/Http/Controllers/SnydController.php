@@ -508,7 +508,7 @@ class SnydController extends Controller
 
         $participating_in_game = false;
         foreach ($games AS $game) {
-            $participant = GameParticipant::where('game_id', $this->game->id)
+            $participant = GameParticipant::where('game_id', $game->id)
                 ->where('participant_id', $this->user->id)
                 ->first();
             if(!empty($participant)) {
