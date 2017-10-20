@@ -8,6 +8,7 @@ use App\Models\Roll;
 use App\Models\User;
 use App\Models\GameParticipant;
 use BotMan\BotMan\BotMan;
+use Log;
 
 class SnydController extends Controller
 {
