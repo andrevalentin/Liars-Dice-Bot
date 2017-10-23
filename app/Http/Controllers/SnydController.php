@@ -70,9 +70,9 @@ class SnydController extends Controller
         $dice_count = 4;
         $staircase_enabled = 1;
 
-        // Take bot message and get rid of the "host snyd" part, only keeping any arguments it might contain.
+        // Take bot message and get rid of the "host liar" part, only keeping any arguments it might contain.
         $message = substr($bot->getMessage()->getText(), 9);
-        // Check if there could even possibly be any arguments after the "host snyd" message.
+        // Check if there could even possibly be any arguments after the "host liar" message.
         preg_match_all("/--\w+=\w+/", $message, $matches);
         if(count($matches)) {
             // Here we want to look for any arguments in the following format "--key=value"
@@ -104,9 +104,9 @@ class SnydController extends Controller
         $this->current_participant->participant_id = $this->user->id;
         $this->current_participant->save();
 
-        echo "[INFO] New game of Snyd starting! ID: " . $this->game->id . " Host: " . $this->user->username . "\n";
+        echo "[INFO] New game of Liar's Dice starting! ID: " . $this->game->id . " Host: " . $this->user->username . "\n";
 
-        $bot->reply("Let's play Snyd! <@" . $this->user->slack_id . "> is hosting.. This is game number #" . $this->game->id . "! Type \"me\" to join!");
+        $bot->reply("Let's play Liar's Dice! <@" . $this->user->slack_id . "> is hosting.. This is game number #" . $this->game->id . "! Type \"me\" to join!");
         return;
     }
 
@@ -219,7 +219,7 @@ class SnydController extends Controller
                 ]);
 
             // Notify players about game starting
-            $bot->say("Alright, let's play Snyd.. There are *$participant_count* players in the game.. Rolling the dice!", $player->slack_id);
+            $bot->say("Alright, let's play Liar's Dice.. There are *$participant_count* players in the game.. Rolling the dice!", $player->slack_id);
             if ($key == 0) {
                 $bot->say("You are the first player! You have the first call..", $player->slack_id);
             }else{
@@ -442,13 +442,13 @@ class SnydController extends Controller
         foreach ($this->current_round_participants as $participant) {
             $user = User::find($participant->participant_id);
             if($participant->participant_id == $this->next_participant->participant_id) {
-                $bot->say("<@" . $this->user->slack_id . "> called snyd and *" . ($loser_id == $this->user->id ? 'LOST' : 'WON') . "*! There were *$hits $dice_face_to_look_for's*.. There are *" . $this->dice_left_in_game . "* dice left..", $user->slack_id);
+                $bot->say("<@" . $this->user->slack_id . "> called liar and *" . ($loser_id == $this->user->id ? 'LOST' : 'WON') . "*! There were *$hits $dice_face_to_look_for's*.. There are *" . $this->dice_left_in_game . "* dice left..", $user->slack_id);
                 $bot->say("Now it's your turn!", $user->slack_id);
             }elseif($participant->participant_id == $this->current_participant->participant_id) {
-                $bot->say("You called snyd and *" . ($loser_id == $this->user->id ? 'LOST' : 'WON') . "*! There were *$hits $dice_face_to_look_for's*.. There are *" . $this->dice_left_in_game . "* dice left..", $user->slack_id);
+                $bot->say("You called liar and *" . ($loser_id == $this->user->id ? 'LOST' : 'WON') . "*! There were *$hits $dice_face_to_look_for's*.. There are *" . $this->dice_left_in_game . "* dice left..", $user->slack_id);
                 $bot->say("Now it's <@" . $this->next_user->slack_id . ">'s turn..", $user->slack_id);
             }else{
-                $bot->say("<@" . $this->user->slack_id . "> called snyd and *" . ($loser_id == $this->user->id ? 'LOST' : 'WON') . "*! There were *$hits $dice_face_to_look_for's*.. There are *" . $this->dice_left_in_game . "* dice left..", $user->slack_id);
+                $bot->say("<@" . $this->user->slack_id . "> called liar and *" . ($loser_id == $this->user->id ? 'LOST' : 'WON') . "*! There were *$hits $dice_face_to_look_for's*.. There are *" . $this->dice_left_in_game . "* dice left..", $user->slack_id);
                 $bot->say("Now it's <@" . $this->next_user->slack_id . ">'s turn..", $user->slack_id);
             }
         }
