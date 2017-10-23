@@ -43,11 +43,22 @@ class SnydController extends Controller
     {
         $this->handleUser($bot);
 
-        $open_game = Game::where('state', 'open')->first();
+        $open_game = Game::where('state', 'open')
+            ->where('slack_team_id', $this->user->slack_team_id)
+            ->first();
         if(!empty($open_game)) {
-            $open_host = User::find($open_game->host_id);
-            $bot->reply("Another open game is currently recruiting players, <@" . $open_host->slack_id . "> is hosting.. It has to start before you can start another! Type \"me\" to join that game!");
-            return;
+            $date = new \DateTime;
+            $date->modify('-10 minutes');
+            $formatted_date = $date->format('Y-m-d H:i:s');
+
+            if($open_game->created_at < $formatted_date) {
+                $open_game->state = 'timed_out';
+                $open_game->save();
+            }else{
+                $open_host = User::find($open_game->host_id);
+                $bot->reply("Another open game is currently recruiting players, <@" . $open_host->slack_id . "> is hosting.. It has to start before you can start another! Type \"me\" to join that game!");
+                return;
+            }
         }
 
         // Setting game defaults
@@ -77,6 +88,7 @@ class SnydController extends Controller
         }
 
         $this->game = new Game;
+        $this->game->slack_team_id = $this->user->slack_team_id;
         $this->game->host_id = $this->user->id;
         $this->game->dice = $dice_count;
         $this->game->staircase_enabled = $staircase_enabled;
@@ -653,12 +665,14 @@ class SnydController extends Controller
     private function handleUser(BotMan $bot)
     {
         echo "[INFO] User " . $bot->getUser()->getUsername() . " sent a message!\n";
+
         $this->user = User::updateOrCreate(
             [
-                "slack_id" => $bot->getUser()->getId()
+                "slack_id"      => $bot->getUser()->getId()
             ],
             [
-                "username" => $bot->getUser()->getUsername()
+                "slack_team_id" => $bot->getUser()->getInfo()['team_id'],
+                "username"      => $bot->getUser()->getUsername()
             ]
         );
     }
