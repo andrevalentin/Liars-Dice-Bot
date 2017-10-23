@@ -39,6 +39,11 @@ class SnydController extends Controller
         6 => ":six:",
     ];
 
+    public function help(BotMan $bot)
+    {
+        // TODO: Add help command that explains the rules!
+    }
+
     public function host(BotMan $bot)
     {
         $this->handleUser($bot);
@@ -111,6 +116,7 @@ class SnydController extends Controller
 
         // Getting the currently open game
         $this->game = Game::where('state', 'open')
+            ->where('slack_team_id', $this->user->slack_team_id)
             ->first();
         if(empty($this->game)) {
             $bot->reply("There doesn't seem to be any open games right now.. :thinking_face: You could host one by asking if anyone wants to play?");
@@ -145,6 +151,7 @@ class SnydController extends Controller
 
         // Getting the currently open game
         $this->game = Game::where('state', 'open')
+            ->where('slack_team_id', $this->user->slack_team_id)
             ->first();
         if(empty($this->game)) {
             $bot->reply("There doesn't seem to be any open games you can leave right now..");
@@ -176,6 +183,7 @@ class SnydController extends Controller
 
         // Getting the currently open game
         $this->game = Game::where('state', 'open')
+            ->where('slack_team_id', $this->user->slack_team_id)
             ->first();
         if(empty($this->game)) {
             $bot->reply("There doesn't seem to be any games you can start right now.. :thinking_face: You could host one by asking if anyone wants to play?");
@@ -318,7 +326,7 @@ class SnydController extends Controller
             return;
         }
 
-        if($this->current_call == 'lift') {
+        if($this->current_call == 'liar') {
             $this->endRound($bot);
         }else{
             $this->continueRound($bot);
@@ -351,7 +359,7 @@ class SnydController extends Controller
             $user = User::find($participant->participant_id);
             if($participant->participant_id == $this->next_participant->participant_id) {
                 $bot->say("<@" . $this->user->slack_id . "> called $this->current_call", $user->slack_id);
-                $bot->say("Now it's your turn! Call or lift!", $user->slack_id);
+                $bot->say("Now it's your turn! Call or say liar!", $user->slack_id);
             }elseif($participant->participant_id == $this->current_participant->participant_id) {
                 $bot->say("You called $this->current_call..", $user->slack_id);
                 $bot->say("Now it's <@" . $this->next_user->slack_id . ">'s turn..", $user->slack_id);
