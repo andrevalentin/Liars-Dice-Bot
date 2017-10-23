@@ -48,11 +48,27 @@ class BotManController extends Controller
 
         Log::info("New app installation complete! team_id=$result->team_id - team_name=$result->team_name");
 
-        // Notify Bot Island somehow..
+        // Notify Bot Island of new installation..
+        $webhook_data = json_encode([
+            "username"  => "App Manager",
+            "text"      => "*$result->team_name* just installed Liar's Dice!",
+        ]);
+
+        $opts = [
+            'http' => [
+                'method'  => 'POST',
+                'header'  => 'Content-Type: application/json',
+                'content' => $webhook_data
+            ]
+        ];
+
+        $context  = stream_context_create($opts);
+        file_get_contents(env('BOTISLAND_INCOMING_WEBHOOK_URL'), false, $context);
+
 
         return response()->json([
             "status" => "success",
-            "message" => "Nice, now go play Liar's dice!"
+            "message" => "Nice, now go play Liar's Dice!"
         ], 200);
     }
 
