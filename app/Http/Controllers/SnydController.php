@@ -107,7 +107,7 @@ class SnydController extends Controller
         $this->current_participant->participant_id = $this->user->id;
         $this->current_participant->save();
 
-        echo "[INFO] New game of Liar's Dice starting! ID: " . $this->game->id . " Host: " . $this->user->username . "\n";
+        Log::info("[INFO] New game of Liar's Dice starting! ID: " . $this->game->id . " Host: " . $this->user->username);
 
         $bot->reply("Let's play Liar's Dice! <@" . $this->user->slack_id . "> is hosting.. This is game number #" . $this->game->id . "! Type \"me\" to join!");
         return;
@@ -194,7 +194,7 @@ class SnydController extends Controller
         }
 
         if($this->game->host_id !== $this->user->id) {
-            $bot->reply("You are trying to start a game which you are not the host of, for helved..");
+            $bot->reply("You are trying to start a game which you are not the host of!");
             return;
         }
 
@@ -262,10 +262,10 @@ class SnydController extends Controller
         $this->setCurrentRoundParticipants();
         $this->participant_count = $this->participants->count();
         $this->current_round_participant_count = $this->current_round_participants->count();
-        echo "[INFO] Current round participant count: " . $this->current_round_participant_count . "\n";
+        Log::info("[INFO] Current round participant count: " . $this->current_round_participant_count);
 
         $this->current_call = strtolower(trim($bot->getMessage()->getText()));
-        echo "[INFO] User called: " . $this->current_call . "\n";
+        Log::info("[INFO] User called: " . $this->current_call);
 
         $this->calls = Call::where('game_id', $this->game->id)
             ->orderBy('created_at', 'desc')
@@ -386,8 +386,8 @@ class SnydController extends Controller
             ->get();
         $this->current_round_rolls = $rolls->where('round', $rolls->first()->round)->flatten();
 
-        echo "[INFO] Dice amount to look for: $dice_amount_to_look_for \n";
-        echo "[INFO] Dice face to look for: $dice_face_to_look_for \n";
+        Log::info("[INFO] Dice amount to look for: $dice_amount_to_look_for");
+        Log::info("[INFO] Dice face to look for: $dice_face_to_look_for");
 
         $hits = 0;
         foreach ($this->current_round_rolls AS $rolls) {
@@ -418,7 +418,7 @@ class SnydController extends Controller
             }
         }
 
-        echo "[INFO] Hits: $hits \n";
+        Log::info("[INFO] Hits: $hits");
 
         $loser_id = $last_call->participant_id;
         if($hits >= $dice_amount_to_look_for) {
@@ -463,9 +463,9 @@ class SnydController extends Controller
         foreach ($this->participants as $participant) {
             $user = User::find($participant->participant_id);
             if($looser_id == $participant->participant_id) {
-                $bot->say("You lost, better luck next time.. FeelsBadMan..", $user->slack_id);
+                $bot->say("You lost, better luck next time..", $user->slack_id);
             }else{
-                $bot->say("The game is over! <@" . $looser->slack_id . "> lost! Up for another game?", $user->slack_id);
+                $bot->say("The game is over! <@" . $looser->slack_id . "> lost! Perhaps start another game?", $user->slack_id);
             }
         }
         // Setting the game state to be over.
@@ -570,7 +570,7 @@ class SnydController extends Controller
                 $current_dice_count = count(json_decode($last_roll->roll));
                 if($current_dice_count == 1 && $loser_id != $participant->participant_id) {
                     $this->current_round_participant_count--;
-                    echo "[DEBUG] Post subtract current round participant count: " . $this->current_round_participant_count . "\n";
+                    Log::info("[DEBUG] Post subtract current round participant count: " . $this->current_round_participant_count);
                     // Participant currently being looped over won and will be removed from the game..
                     $bot->say("Hi, you won the game! Congrats! :meat_on_bone:", $player->slack_id);
                     foreach ($this->current_round_participants as $crp) {
@@ -675,7 +675,7 @@ class SnydController extends Controller
 
     private function handleUser(BotMan $bot)
     {
-        echo "[INFO] User " . $bot->getUser()->getUsername() . " sent a message!\n";
+        Log::info("[INFO] User " . $bot->getUser()->getUsername() . " sent a message!");
 
         $this->user = User::updateOrCreate(
             [
