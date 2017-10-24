@@ -136,7 +136,7 @@ class SnydController extends Controller
             ->where('participant_id', $this->user->id)
             ->first();
         if(!empty($current_participant_check)) {
-            $bot->reply("You are already in the game, stop trying to join! Enculé!");
+            $bot->reply("You are already in the game, stop trying to join!");
             return;
         }
 
