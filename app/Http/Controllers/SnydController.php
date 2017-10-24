@@ -68,7 +68,7 @@ class SnydController extends Controller
 
         // Setting game defaults
         $dice_count = 4;
-        $staircase_enabled = 1;
+        $staircase_enabled = 0;
 
         // Take bot message and get rid of the "host liar" part, only keeping any arguments it might contain.
         $message = substr($bot->getMessage()->getText(), 9);
@@ -85,6 +85,9 @@ class SnydController extends Controller
                 }
                 // Checking if we should disable the staircase (trappen) for this game.
                 if(substr($arg, 0, 12) == "--staircase=") {
+                    if(substr($arg, 12) == "true") {
+                        $staircase_enabled = 1;
+                    }
                     if(substr($arg, 12) == "false") {
                         $staircase_enabled = 0;
                     }
