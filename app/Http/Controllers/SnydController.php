@@ -8,6 +8,7 @@ use App\Models\Roll;
 use App\Models\User;
 use App\Models\GameParticipant;
 use BotMan\BotMan\BotMan;
+use BotMan\BotMan\Messages\Outgoing\OutgoingMessage;
 use Log;
 
 class SnydController extends Controller
@@ -41,12 +42,20 @@ class SnydController extends Controller
 
     public function help(BotMan $bot)
     {
-        // TODO: Add help command that explains the rules!
+        $this->handleUser($bot);
+        if(!$this->messageSentToBot($bot)) {
+            return;
+        }
+        $message = OutgoingMessage::create('The rules for the games are a bit too long to post on slack.. so here is a link: https://liarsapp.valentin.nu/help');
+        $bot->say($message, $this->user->slack_id);
     }
 
     public function host(BotMan $bot)
     {
         $this->handleUser($bot);
+        if($this->messageSentToBot($bot)) {
+            return;
+        }
 
         $open_game = Game::where('state', 'open')
             ->where('slack_team_id', $this->user->slack_team_id)
@@ -183,6 +192,9 @@ class SnydController extends Controller
     public function start(BotMan $bot)
     {
         $this->handleUser($bot);
+        if($this->messageSentToBot($bot)) {
+            return;
+        }
 
         // Getting the currently open game
         $this->game = Game::where('state', 'open')
@@ -241,6 +253,9 @@ class SnydController extends Controller
     public function playRound(BotMan $bot)
     {
         $this->handleUser($bot);
+        if(!$this->messageSentToBot($bot)) {
+            return;
+        }
 
         $this->current_participant = GameParticipant::where('participant_id', $this->user->id)
             ->orderBy('created_at', 'desc')
@@ -476,6 +491,9 @@ class SnydController extends Controller
     public function abortGame(BotMan $bot)
     {
         $this->handleUser($bot);
+        if(!$this->messageSentToBot($bot)) {
+            return;
+        }
 
         // Check if a game is LIVE where the current user is HOST
         $game_check = Game::where('state', 'live')
@@ -503,6 +521,9 @@ class SnydController extends Controller
     public function close(BotMan $bot)
     {
         $this->handleUser($bot);
+        if($this->messageSentToBot($bot)) {
+            return;
+        }
 
         // Check if a game is OPEN where the current user is HOST
         $game_check = Game::where('state', 'open')
@@ -522,6 +543,9 @@ class SnydController extends Controller
     public function say(BotMan $bot)
     {
         $this->handleUser($bot);
+        if(!$this->messageSentToBot($bot)) {
+            return;
+        }
 
         $games = Game::where('state', 'live')
             ->get();
@@ -686,6 +710,16 @@ class SnydController extends Controller
                 "username"      => $bot->getUser()->getUsername()
             ]
         );
+    }
+
+    private function messageSentToBot(BotMan $bot)
+    {
+        $payload = $bot->getMessage()->getPayload();
+        // D == Direct Message (with bot), G == Private Group/Channel, C == Public Channel
+        if(substr($payload['channel'], 0 ,1) == 'D') {
+            return true;
+        }
+        return false;
     }
 
 }
