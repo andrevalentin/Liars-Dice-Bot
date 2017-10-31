@@ -640,7 +640,7 @@ class LiarsDiceBotController extends Controller
             $roll->save();
 
             $emoji_dice = "";
-            foreach (sort($dice) AS $die) {
+            foreach ($dice AS $die) {
                 $emoji_dice .= $this->emoji_numbers[$die] . " ";
             }
             $bot->say("Your roll: " . $emoji_dice, $player->slack_id);
@@ -655,7 +655,11 @@ class LiarsDiceBotController extends Controller
             $roll = rand(1, 6);
             $rolls[] = $roll;
         }
-        return $rolls;
+
+        Log::debug(json_encode($rolls));
+        Log::debug(json_encode(sort($rolls)));
+
+        return sort($rolls);
     }
 
     private function compareTwoCalls($current_call, $previous_call)
