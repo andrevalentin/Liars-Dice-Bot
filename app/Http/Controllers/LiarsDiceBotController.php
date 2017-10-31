@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Jobs\ProcessMessage;
 use App\Models\Call;
 use App\Models\Game;
 use App\Models\Roll;
@@ -42,29 +43,10 @@ class LiarsDiceBotController extends Controller
 
     public function handle(BotMan $bot)
     {
-        $msg_txt = $bot->getMessage()->getText();
-
-        if ($msg_txt == 'help') {
-            $this->help($bot);
-        } elseif(preg_match('/play liar.*/', $msg_txt)) {
-            $this->host($bot);
-        } elseif($msg_txt == 'close game') {
-            $this->close($bot);
-        } elseif($msg_txt == 'me') {
-            $this->join($bot);
-        } elseif($msg_txt == 'leave') {
-            $this->leave($bot);
-        } elseif($msg_txt == 'start game') {
-            $this->start($bot);
-        } elseif(preg_match('/([1-9]{0,1}[0-9]+(,|\.)[0-6])/', $msg_txt)) {
-            $this->playRound($bot);
-        } elseif($msg_txt == 'liar') {
-            $this->playRound($bot);
-        } elseif($msg_txt == 'abort game') {
-            $this->abort($bot);
-        } elseif(preg_match('/say .*/', $msg_txt)) {
-            $this->say($bot);
-        }
+        ProcessMessage::dispatch($bot);
+        return response()->json([
+            'status' => 'success'
+        ], 200);
     }
 
     public function help(BotMan $bot)
