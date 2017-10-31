@@ -631,6 +631,7 @@ class LiarsDiceBotController extends Controller
             }
 
             $dice = $this->rollDice($dice_to_roll);
+            sort($dice);
 
             $roll = new Roll;
             $roll->roll = json_encode($dice);
@@ -655,11 +656,7 @@ class LiarsDiceBotController extends Controller
             $roll = rand(1, 6);
             $rolls[] = $roll;
         }
-
-        Log::debug(json_encode($rolls));
-        Log::debug(json_encode(sort($rolls)));
-
-        return sort($rolls);
+        return $rolls;
     }
 
     private function compareTwoCalls($current_call, $previous_call)
