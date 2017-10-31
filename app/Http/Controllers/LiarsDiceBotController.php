@@ -56,7 +56,7 @@ class LiarsDiceBotController extends Controller
             $this->leave($bot);
         } elseif($msg_txt == 'start game') {
             $this->start($bot);
-        } elseif(preg_match('/([1-9]{0,1}[0-9]+(,|.)[0-6])/', $msg_txt)) {
+        } elseif(preg_match('/([1-9]{0,1}[0-9]+(,|\.)[0-6])/', $msg_txt)) {
             $this->playRound($bot);
         } elseif($msg_txt == 'liar') {
             $this->playRound($bot);
