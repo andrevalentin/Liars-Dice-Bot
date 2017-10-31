@@ -46,7 +46,7 @@ class LiarsDiceBotController extends Controller
 
         if ($msg_txt == 'help') {
             $this->help($bot);
-        } elseif($msg_txt == 'play liar') {
+        } elseif(preg_match('/play liar.*/', $msg_txt)) {
             $this->host($bot);
         } elseif($msg_txt == 'close game') {
             $this->close($bot);
