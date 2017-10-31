@@ -85,7 +85,7 @@ class LiarsDiceBotController extends Controller
         }
 
         // Setting game defaults
-        $dice_count = 4;
+        $dice_count = 5;
         $staircase_enabled = 0;
 
         // Take bot message and get rid of the "host liar" part, only keeping any arguments it might contain.
@@ -640,7 +640,7 @@ class LiarsDiceBotController extends Controller
             $roll->save();
 
             $emoji_dice = "";
-            foreach ($dice AS $die) {
+            foreach (sort($dice) AS $die) {
                 $emoji_dice .= $this->emoji_numbers[$die] . " ";
             }
             $bot->say("Your roll: " . $emoji_dice, $player->slack_id);
