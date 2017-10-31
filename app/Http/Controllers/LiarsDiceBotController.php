@@ -2,14 +2,14 @@
 
 namespace App\Http\Controllers;
 
-use App\Jobs\ProcessMessage;
 use App\Models\Call;
 use App\Models\Game;
 use App\Models\Roll;
 use App\Models\User;
+use App\Jobs\ProcessMessage;
 use App\Models\GameParticipant;
-use BotMan\BotMan\BotMan;
 use BotMan\BotMan\Messages\Outgoing\OutgoingMessage;
+use BotMan\BotMan\BotMan;
 use Log;
 
 class LiarsDiceBotController extends Controller
@@ -631,7 +631,6 @@ class LiarsDiceBotController extends Controller
             }
 
             $dice = $this->rollDice($dice_to_roll);
-            sort($dice);
 
             $roll = new Roll;
             $roll->roll = json_encode($dice);
