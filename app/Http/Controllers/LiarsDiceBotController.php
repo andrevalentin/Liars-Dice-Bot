@@ -631,6 +631,7 @@ class LiarsDiceBotController extends Controller
             }
 
             $dice = $this->rollDice($dice_to_roll);
+            sort($dice);
 
             $roll = new Roll;
             $roll->roll = json_encode($dice);
