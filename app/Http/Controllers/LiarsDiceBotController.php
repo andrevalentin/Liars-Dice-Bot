@@ -607,7 +607,7 @@ class LiarsDiceBotController extends Controller
                 if($current_dice_count == 1 && $loser_id != $participant->participant_id) {
                     $this->current_round_participant_count--;
                     // Participant currently being looped over won and will be removed from the game..
-                    $bot->say("Hi, you won the game! There were *$this->end_round_hits $this->end_round_dice_face_to_look_for's* Congrats! :meat_on_bone:", $player->slack_id);
+                    $bot->say("Hi, you won the game! There were *$this->end_round_hits $this->end_round_dice_face_to_look_for's*.. Congrats! :meat_on_bone:", $player->slack_id);
                     foreach ($this->current_round_participants as $crp) {
                         if($crp == $participant) {
                             $participants = $participants->filter(function ($value, $key) use ($participant) {
