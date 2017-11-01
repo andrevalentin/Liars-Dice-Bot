@@ -472,13 +472,13 @@ class LiarsDiceBotController extends Controller
         foreach ($this->current_round_participants as $participant) {
             $user = User::find($participant->participant_id);
             if($participant->participant_id == $this->next_participant->participant_id) {
-                $bot->say("<@" . $this->user->slack_id . "> called liar and *" . ($loser_id == $this->user->id ? 'LOST' : 'WON') . "*! There were *$hits $dice_face_to_look_for's*.. There are *" . $this->dice_left_in_game . "* dice left..", $user->slack_id);
+                $bot->say("<@" . $this->user->slack_id . "> called liar and *" . ($loser_id == $this->user->id ? 'LOST' : 'WON') . "*! There were *$this->end_round_hits $this->end_round_dice_face_to_look_for's*.. There are *" . $this->dice_left_in_game . "* dice left..", $user->slack_id);
                 $bot->say("Now it's your turn!", $user->slack_id);
             }elseif($participant->participant_id == $this->current_participant->participant_id) {
-                $bot->say("You called liar and *" . ($loser_id == $this->user->id ? 'LOST' : 'WON') . "*! There were *$hits $dice_face_to_look_for's*.. There are *" . $this->dice_left_in_game . "* dice left..", $user->slack_id);
+                $bot->say("You called liar and *" . ($loser_id == $this->user->id ? 'LOST' : 'WON') . "*! There were *$this->end_round_hits $this->end_round_dice_face_to_look_for's*.. There are *" . $this->dice_left_in_game . "* dice left..", $user->slack_id);
                 $bot->say("Now it's <@" . $this->next_user->slack_id . ">'s turn..", $user->slack_id);
             }else{
-                $bot->say("<@" . $this->user->slack_id . "> called liar and *" . ($loser_id == $this->user->id ? 'LOST' : 'WON') . "*! There were *$hits $dice_face_to_look_for's*.. There are *" . $this->dice_left_in_game . "* dice left..", $user->slack_id);
+                $bot->say("<@" . $this->user->slack_id . "> called liar and *" . ($loser_id == $this->user->id ? 'LOST' : 'WON') . "*! There were *$this->end_round_hits $this->end_round_dice_face_to_look_for's*.. There are *" . $this->dice_left_in_game . "* dice left..", $user->slack_id);
                 $bot->say("Now it's <@" . $this->next_user->slack_id . ">'s turn..", $user->slack_id);
             }
         }
@@ -607,9 +607,12 @@ class LiarsDiceBotController extends Controller
                 if($current_dice_count == 1 && $loser_id != $participant->participant_id) {
                     $this->current_round_participant_count--;
                     // Participant currently being looped over won and will be removed from the game..
-                    $bot->say("Hi, you won the game! There were *$this->end_round_hits $this->end_round_dice_face_to_look_for's* Congrats! :meat_on_bone:", $player->slack_id);
+                    $bot->say("Hi, you won the game! There were *$this->end_round_hits $this->end_round_dice_face_to_look_for's*.. Congrats! :meat_on_bone:", $player->slack_id);
                     foreach ($this->current_round_participants as $crp) {
                         if($crp == $participant) {
+                            $participants = $participants->filter(function ($value, $key) use ($participant) {
+                                return $value->participant_id != $participant->participant_id;
+                            });
                             continue;
                         }
                         $user = User::find($crp->participant_id);
@@ -620,12 +623,22 @@ class LiarsDiceBotController extends Controller
                         }
                     }
                     continue;
+                }
+            }
+        }
+
+        foreach ($participants as $participant) {
+            $player = User::find($participant->participant_id);
+            if($round > 0) {
+                $last_roll = Roll::where('game_id', $this->game->id)
+                    ->where('participant_id', $participant->participant_id)
+                    ->orderBy('round', 'desc')
+                    ->first();
+                $current_dice_count = count(json_decode($last_roll->roll));
+                if($loser_id == $participant->participant_id) {
+                    $dice_to_roll = $current_dice_count;
                 }else{
-                    if($loser_id == $participant->participant_id) {
-                        $dice_to_roll = $current_dice_count;
-                    }else{
-                        $dice_to_roll = $current_dice_count - 1;
-                    }
+                    $dice_to_roll = $current_dice_count - 1;
                 }
             }else{
                 $dice_to_roll = $no_of_dice;
