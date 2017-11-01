@@ -85,7 +85,7 @@
 
     .container-top {
         background: #2986BE;
-        background-image: url(http://homestead.app/bg.png), linear-gradient(-150deg, #00C1B6 0%, #136EB5 97%);
+        background-image: url('{{asset('bg.png')}}'), linear-gradient(-150deg, #00C1B6 0%, #136EB5 97%);
         box-shadow: 0 1px 1px rgba(0, 0, 0, 0.75);
     }
 
