@@ -7,6 +7,9 @@
                 <a href="/contact">Contact</a>
             </div>
         </div>
+        <div class="row" style="text-align: center">
+            <p style="font-size: 15px;color: rgba(0, 0, 0, 0.8);">This site is not created by, affiliated with, or supported by Slack Technologies, Inc.</p>
+        </div>
     </div>
 </footer>
 

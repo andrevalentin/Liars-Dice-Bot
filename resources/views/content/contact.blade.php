@@ -26,6 +26,7 @@
         .container-top {
             background: white;
             box-shadow: 0 1px 1px rgba(0, 0, 0, 0.50);
+            min-height: 620px;
         }
 
         .container-top>.container>.row>.col-md-12>p {
