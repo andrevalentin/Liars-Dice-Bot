@@ -18,6 +18,13 @@ class ProcessMessage implements ShouldQueue
     protected $liars_dice;
 
     /**
+     * The number of times the job may be attempted.
+     *
+     * @var int
+     */
+    public $tries = 1;
+
+    /**
      * Create a new job instance.
      *
      * @return void
@@ -39,13 +46,13 @@ class ProcessMessage implements ShouldQueue
 
         if($msg_txt == 'start game') {
             $this->liars_dice->start($this->bot);
-        } elseif(preg_match('/([1-9]{0,1}[0-9]+(,|\.)[0-6])/', $msg_txt)) {
+        } elseif(preg_match('/^([1-9]{0,1}[0-9]+(,|\.)[0-6])$/', $msg_txt)) {
             $this->liars_dice->playRound($this->bot);
         } elseif($msg_txt == 'liar') {
             $this->liars_dice->playRound($this->bot);
         } elseif($msg_txt == 'abort game') {
             $this->liars_dice->abort($this->bot);
-        } elseif(preg_match('/say .*/', $msg_txt)) {
+        } elseif(preg_match('/^say .*$/', $msg_txt)) {
             $this->liars_dice->say($this->bot);
         }
     }
