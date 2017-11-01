@@ -242,8 +242,11 @@ class LiarsDiceBotController extends Controller
                     'participant_order' => $key
                 ]);
 
+            $total_dice_count = $participant_count * $this->game->dice;
+            $staircase_mode = ($this->game->staircase_enabled ? 'enabled' : 'disabled');
+
             // Notify players about game starting
-            $bot->say("Alright, let's play Liar's Dice.. There are *$participant_count* players in the game.. Rolling the dice!", $player->slack_id);
+            $bot->say("Alright, let's play Liar's Dice! There are *$participant_count* players in the game, which makes a total of *$total_dice_count* dice.. The 'staircase' is *$staircase_mode*! Rolling the dice!", $player->slack_id);
             if ($key == 0) {
                 $bot->say("You are the first player! You have the first call..", $player->slack_id);
             }else{
@@ -255,8 +258,6 @@ class LiarsDiceBotController extends Controller
         $this->game->save();
 
         $this->initRound($bot, $shuffled_participants, $this->game->dice, 0);
-
-        $bot->reply("Game starting! Further instructions will be sent via DM..");
     }
 
     public function playRound(BotMan $bot)
@@ -389,7 +390,6 @@ class LiarsDiceBotController extends Controller
                 $bot->say("<@" . $this->user->slack_id . "> called $this->current_call", $user->slack_id);
                 $bot->say("Now it's your turn! Call or say liar!", $user->slack_id);
             }elseif($participant->participant_id == $this->current_participant->participant_id) {
-                $bot->say("You called $this->current_call..", $user->slack_id);
                 $bot->say("Now it's <@" . $this->next_user->slack_id . ">'s turn..", $user->slack_id);
             }else{
                 $bot->say("<@" . $this->user->slack_id . "> called $this->current_call", $user->slack_id);
