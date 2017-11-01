@@ -3,8 +3,8 @@
 $botman = resolve('botman');
 
 // routes should exclusively work (listen) in channels
-$botman->hears('help[ ]*', \App\Http\Controllers\LiarsDiceBotController::class.'@handle');
-$botman->hears('play liar.*', \App\Http\Controllers\LiarsDiceBotController::class.'@handle');
+$botman->hears('help[ ]*', \App\Http\Controllers\LiarsDiceBotController::class.'@help');
+$botman->hears('play liar.*', \App\Http\Controllers\LiarsDiceBotController::class.'@host');
 $botman->hears('close game', \App\Http\Controllers\LiarsDiceBotController::class.'@close');
 $botman->hears('me', \App\Http\Controllers\LiarsDiceBotController::class.'@join');
 $botman->hears('leave', \App\Http\Controllers\LiarsDiceBotController::class.'@leave');
