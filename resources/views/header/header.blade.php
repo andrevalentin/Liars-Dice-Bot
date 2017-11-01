@@ -1,28 +1,18 @@
-<div class="container">
-    <nav class="navbar navbar-default">
+<div class="container-fluid" style="padding:0;background: whitesmoke">
+    <nav class="navbar navbar-default" style="padding-left: 15px;padding-right: 15px;box-shadow: 0 1px 1px rgba(0, 0, 0, 0.50);">
         <div class="container-fluid">
             <!-- Brand and toggle get grouped for better mobile display -->
             <div class="navbar-header">
-                <button type="button" class="navbar-toggle collapsed" data-toggle="collapse"
-                        data-target="#bs-example-navbar-collapse-1" aria-expanded="false">
-                    <span class="sr-only">Toggle navigation</span>
-                    <span class="icon-bar"></span>
-                    <span class="icon-bar"></span>
-                    <span class="icon-bar"></span>
-                </button>
-                <a style="color: whitesmoke;font-family: 'Playfair Display', serif;    font-size: 26px;font-weight: bold;    text-shadow: 1px 1px 1px rgb(0, 0, 0);"
-                   class="navbar-brand" href="/"><img style="height: 45px;display: inline-block;margin-right: 15px;"
-                                                      src="{{asset('logo.png')}}" alt="">Liar's Dice</a>
+                <a style="color: #2c3239;font-size: 26px;font-weight: bold;"
+                   class="navbar-brand" href="/">Liar's Dice</a>
             </div>
             <!-- Collect the nav links, forms, and other content for toggling -->
-            <div class="collapse navbar-collapse" id="bs-example-navbar-collapse-1">
+            <div class="" id="">
                 <ul class="nav navbar-nav navbar-right">
-                    <li><a href="/leaderboard">Leaderboards</a></li>
-                    <li><a href="/help">Help</a></li>
-                    <li><a href="/rules">Rules</a></li>
-                    <li><a style="padding: 10px;" href="/install">
-                            <button class="btn btn-sm btn-default">Get Started</button>
-                        </a>
+                    <li><a href="/help">How-to-play</a></li>
+                    <li>
+
+                        <a href="https://slack.com/oauth/authorize?&client_id=248125203971.250771295524&scope=bot">Add to Slack</a>
                     </li>
                 </ul>
             </div><!-- /.navbar-collapse -->
@@ -37,15 +27,29 @@
         border:none;
     }
     .navbar-default {
-        height: 70px;
+        min-height: 70px;
         padding-top: 10px;
+        border-radius: 0;
     }
     .navbar-default .navbar-nav>li>a {
-        color:whitesmoke;
         font-size: 14px;
         font-weight: bold;
-        color: #6d9a91;
-        text-shadow: 1px 1px 1px rgb(0, 0, 0);
+        color: #2c3239;
+        padding-bottom: 5px;
+        margin-bottom: 10px;
+    }
+
+    .navbar-default .navbar-nav>li>a:hover {
+        text-decoration: underline;
+    }
+
+    .navbar-brand {
+        color: #2c3239;
+        font-size: 26px;
+        font-weight: bold;
+    }
+    .navbar-brand:hover {
+        text-decoration: underline;
     }
 
 </style>

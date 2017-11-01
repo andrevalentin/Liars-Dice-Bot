@@ -8,7 +8,7 @@
     <title>Liar's Dice</title>
 
     <!-- Fonts -->
-    <link href="https://fonts.googleapis.com/css?family=Playfair+Display:700|Roboto" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css?family=Open+Sans:400,700" rel="stylesheet">
     <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap.min.css" integrity="sha384-BVYiiSIFeK1dGmJRAkycuHAHRg32OmUcww7on3RYdg4Va+PmSTsz/K68vbdEjh4u" crossorigin="anonymous">
     <!-- Styles -->
 </head>
@@ -31,9 +31,10 @@
 
 <style>
     body {
-        font-family: 'Roboto', sans-serif;
-        background: rgba(58,55,73,1);
+        font-family: 'Open Sans', sans-serif;
+        background: whitesmoke;
     }
-
-
+    .panel {
+        border-radius: 0;
+    }
 </style>

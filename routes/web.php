@@ -5,5 +5,6 @@ Route::get('/api/oauth/redirect', 'BotManController@oauthRedirect');
 
 
 Route::get('/', 'UIController@getIndexPage');
-Route::get('/about', 'UIController@getAboutPage');
+Route::get('/contact', 'UIController@getContactPage');
 Route::get('/help', 'UIController@getHelpPage');
+Route::get('/privacy', 'UIController@getPrivacyPage');

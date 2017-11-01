@@ -11,12 +11,16 @@ class UIController extends Controller
         return view('main');
     }
 
-    public static function getAboutPage() {
-        return view('content.about');
+    public static function getContactPage() {
+        return view('content.contact');
     }
 
     public function getHelpPage() {
         return view('content.help');
+    }
+
+    public function getPrivacyPage() {
+        return view('content.privacy');
     }
 
 }
