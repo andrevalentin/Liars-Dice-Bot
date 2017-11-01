@@ -15,11 +15,11 @@
 </div>
 
 <div class="container" style="padding-top: 50px">
-    <div class="row" style="margin-top: 20px">
+    <div class="row" style="margin-top: 50px">
         <div class="col-md-6 hidden-md hidden-lg">
-            <h3>Start the game</h3>
-            <p style="font-size: 16px;line-height: 1.7;">Lorem ipsum dolor sit amet, consectetur adipisicing elit.
-                Deleniti eos ex fuga hic illo inventore ipsa odit recusandae vero? Laborum?</p>
+            <h3 style="margin-top: 0">Start the game</h3>
+            <p style="font-size: 16px;line-height: 1.7;">Play Liar’s Dice by inviting the bot to a channel of your
+                choosing, then simply type “play liar” to open a new game up for your friends or colleagues to join!</p>
         </div>
         <div class="col-md-6">
             <div class="panel panel-default">
@@ -29,17 +29,18 @@
             </div>
         </div>
         <div class="col-md-6 hidden-sm hidden-xs">
-            <h2>Start the game</h2>
-            <p style="font-size: 16px;line-height: 1.7;">Lorem ipsum dolor sit amet, consectetur adipisicing elit.
-                Deleniti eos ex fuga hic illo inventore ipsa odit recusandae vero? Laborum?</p>
+            <h3 style="margin-top: 0">Start the game</h3>
+            <p style="font-size: 16px;line-height: 1.7;">Play Liar’s Dice by inviting the bot to a channel of your
+                choosing, then simply type “play liar” to open a new game up for your friends or colleagues to join!</p>
         </div>
     </div>
 
-    <div class="row" style="margin-top: 50px">
+    <div class="row" style="margin-top: 100px">
         <div class="col-md-6 ">
-            <h2>Let people join</h2>
-            <p style="font-size: 16px;line-height: 1.7;">Lorem ipsum dolor sit amet, consectetur adipisicing elit.
-                Deleniti eos ex fuga hic illo inventore ipsa odit recusandae vero? Laborum?</p>
+            <h3 style="margin-top: 0">Let people join</h3>
+            <p style="font-size: 16px;line-height: 1.7;">To join a game, your Slack members simply have to write “me”,
+                and once you are satisfied with the number of participants (3-4 recommended), you as the host can write
+                “start game” to get the action going!</p>
         </div>
         <div class="col-md-6">
             <div class="panel panel-default">
@@ -50,11 +51,14 @@
         </div>
     </div>
 
-    <div class="row" style="margin-top: 50px">
+    <div class="row" style="margin-top: 100px">
         <div class="col-md-6 hidden-md hidden-lg">
-            <h3>Play the game</h3>
-            <p style="font-size: 16px;line-height: 1.7;">Lorem ipsum dolor sit amet, consectetur adipisicing elit.
-                Deleniti eos ex fuga hic illo inventore ipsa odit recusandae vero? Laborum?</p>
+            <h3 style="margin-top: 0">Play the game</h3>
+            <p style="font-size: 16px;line-height: 1.7;">The game is all about guessing the amount of dice present in
+                the game, you do this by typing commands to the bot. If you type 4.3, well then you are guessing that
+                there are 4 3's in the game! You can of course also deceive your opponents, which is a big part of the
+                game. If you think someone is lying, simply time “Liar” to stop the round - which will reveal who was
+                right!</p>
         </div>
         <div class="col-md-6">
             <div class="panel panel-default">
@@ -64,9 +68,12 @@
             </div>
         </div>
         <div class="col-md-6 hidden-sm hidden-xs">
-            <h3>Play the game</h3>
-            <p style="font-size: 16px;line-height: 1.7;">Lorem ipsum dolor sit amet, consectetur adipisicing elit.
-                Deleniti eos ex fuga hic illo inventore ipsa odit recusandae vero? Laborum?</p>
+            <h3 style="margin-top: 0">Play the game</h3>
+            <p style="font-size: 16px;line-height: 1.7;">The game is all about guessing the amount of dice present in
+                the game. If you type 4.3, well then you are guessing that
+                there are 4 3's in the game! You can of course also deceive your opponents, which is a big part of the
+                game. Think someone is lying? Simply type “Liar” to stop the round - which will reveal who was
+                right!</p>
 
         </div>
     </div>
