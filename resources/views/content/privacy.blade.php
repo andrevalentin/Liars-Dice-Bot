@@ -32,9 +32,10 @@
                     <p>Liar’s Dice is not my idea, this is not copyrighted in any way.</p>
 
                     <p><b>Cookies</b></p>
-                    Nope, not sure how we could even do that?
-                    Third party links and advertising
-                    We don’t store your emails or anything like that, so no, that would be impossible.
+                    <p>Nope, not sure how we could even do that?</p>
+
+                    <p><b>Third party links and advertising</b></p>
+                    <p>We don’t store your emails or anything like that, so no, that would be impossible.</p>
 
                     <br><br><br><br>
                 </div>
