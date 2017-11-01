@@ -31,6 +31,8 @@ class LiarsDiceBotController extends Controller
     protected $next_eligible_participant_order;
     protected $next_participant;
     protected $next_user;
+    protected $end_round_hits;
+    protected $end_round_dice_face_to_look_for;
 
     protected $emoji_numbers = [
         1 => ":one:",
@@ -404,7 +406,7 @@ class LiarsDiceBotController extends Controller
         $last_call = $this->calls->first();
         $exp_last_call = explode(",", $last_call->call);
         $dice_amount_to_look_for = $exp_last_call[0];
-        $dice_face_to_look_for = $exp_last_call[1];
+        $this->end_round_dice_face_to_look_for = $exp_last_call[1];
 
         $rolls = Roll::where('game_id', $this->game->id)
             ->orderBy('round', 'desc')
@@ -412,12 +414,12 @@ class LiarsDiceBotController extends Controller
         $this->current_round_rolls = $rolls->where('round', $rolls->first()->round)->flatten();
 
         Log::info("[INFO] Dice amount to look for: $dice_amount_to_look_for");
-        Log::info("[INFO] Dice face to look for: $dice_face_to_look_for");
+        Log::info("[INFO] Dice face to look for: $this->end_round_dice_face_to_look_for");
 
-        $hits = 0;
+        $this->end_round_hits = 0;
         foreach ($this->current_round_rolls AS $rolls) {
 
-            if($this->game->staircase_enabled && $dice_face_to_look_for != 1) {
+            if($this->game->staircase_enabled && $this->end_round_dice_face_to_look_for != 1) {
                 // Checking for "Trappen" (ladder).
                 $current_roll = json_decode($rolls->roll);
                 $dice_count = count($current_roll);
@@ -429,24 +431,24 @@ class LiarsDiceBotController extends Controller
                     }
                 }
                 if($ladder_counter == ($dice_count+1)) {
-                    $hits = $hits + $ladder_counter;
+                    $this->end_round_hits = $this->end_round_hits + $ladder_counter;
                     continue;
                 }
             }
 
             foreach (json_decode($rolls->roll) as $roll) {
                 if($roll == 1) {
-                    $hits++;
-                }elseif($roll == $dice_face_to_look_for) {
-                    $hits++;
+                    $this->end_round_hits++;
+                }elseif($roll == $this->end_round_dice_face_to_look_for) {
+                    $this->end_round_hits++;
                 }
             }
         }
 
-        Log::info("[INFO] Hits: $hits");
+        Log::info("[INFO] Hits: $this->end_round_hits");
 
         $loser_id = $last_call->participant_id;
-        if($hits >= $dice_amount_to_look_for) {
+        if($this->end_round_hits >= $dice_amount_to_look_for) {
             $loser_id = $this->user->id;
         }
 
@@ -488,7 +490,7 @@ class LiarsDiceBotController extends Controller
         foreach ($this->participants as $participant) {
             $user = User::find($participant->participant_id);
             if($looser_id == $participant->participant_id) {
-                $bot->say("You lost, better luck next time..", $user->slack_id);
+                $bot->say("You lost, there were *$this->end_round_hits $this->end_round_dice_face_to_look_for's*! Better luck next time..", $user->slack_id);
             }else{
                 $bot->say("The game is over! <@" . $looser->slack_id . "> lost! Perhaps start another game?", $user->slack_id);
             }
@@ -604,9 +606,8 @@ class LiarsDiceBotController extends Controller
                 $current_dice_count = count(json_decode($last_roll->roll));
                 if($current_dice_count == 1 && $loser_id != $participant->participant_id) {
                     $this->current_round_participant_count--;
-                    Log::info("[DEBUG] Post subtract current round participant count: " . $this->current_round_participant_count);
                     // Participant currently being looped over won and will be removed from the game..
-                    $bot->say("Hi, you won the game! Congrats! :meat_on_bone:", $player->slack_id);
+                    $bot->say("Hi, you won the game! There were *$this->end_round_hits $this->end_round_dice_face_to_look_for's* Congrats! :meat_on_bone:", $player->slack_id);
                     foreach ($this->current_round_participants as $crp) {
                         if($crp == $participant) {
                             continue;
