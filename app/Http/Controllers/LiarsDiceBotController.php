@@ -142,7 +142,7 @@ class LiarsDiceBotController extends Controller
             ->where('slack_team_id', $this->user->slack_team_id)
             ->first();
         if(empty($this->game)) {
-            $bot->reply("There doesn't seem to be any open games right now.. :thinking_face: You could host one by asking if anyone wants to play?");
+            $bot->reply("There doesn't seem to be any open games right now.. :thinking_face: You could host one by typing 'play liar'?");
             return;
         }
 
