@@ -30,10 +30,11 @@ class BotManController extends Controller
 
         if(!$result->ok) {
             Log::error("The slack app installation failed.");
-            return response()->json([
-                "status" => "error",
-                "message" => "Something went wrong.."
-            ], 500);
+            $alert = [
+                'status' => 'error',
+                'message' => 'The installation of the App failed! If you didn\'t initiate this, then please try again..'
+            ];
+            return view('main', $alert);
         }
 
         Installation::updateOrCreate(
@@ -65,7 +66,11 @@ class BotManController extends Controller
         $context  = stream_context_create($opts);
         file_get_contents(env('BOTISLAND_INCOMING_WEBHOOK_URL'), false, $context);
 
-        return view('main');
+        $alert = [
+            'status' => 'success',
+            'message' => 'The installation of the App was successful! You are now ready to play Lair\'s Dice!'
+        ];
+        return view('main', $alert);
     }
 
     /**
