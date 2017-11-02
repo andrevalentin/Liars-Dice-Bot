@@ -1,3 +1,13 @@
+<!-- Global site tag (gtag.js) - Google Analytics -->
+<script async src="https://www.googletagmanager.com/gtag/js?id=UA-58044520-2"></script>
+<script>
+    window.dataLayer = window.dataLayer || [];
+    function gtag(){dataLayer.push(arguments);}
+    gtag('js', new Date());
+
+    gtag('config', 'UA-58044520-2');
+</script>
+
 <div class="container-fluid" style="padding:0;background: whitesmoke">
     <nav class="navbar navbar-default" style="padding-left: 15px;padding-right: 15px;box-shadow: 0 1px 1px rgba(0, 0, 0, 0.50);">
         <div class="container-fluid">
