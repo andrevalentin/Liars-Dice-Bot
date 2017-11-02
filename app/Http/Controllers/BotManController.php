@@ -65,11 +65,7 @@ class BotManController extends Controller
         $context  = stream_context_create($opts);
         file_get_contents(env('BOTISLAND_INCOMING_WEBHOOK_URL'), false, $context);
 
-
-        return response()->json([
-            "status" => "success",
-            "message" => "Nice, now go play Liar's Dice!"
-        ], 200);
+        return view('main');
     }
 
     /**
