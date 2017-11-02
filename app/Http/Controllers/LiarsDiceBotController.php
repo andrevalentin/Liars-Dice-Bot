@@ -726,13 +726,16 @@ class LiarsDiceBotController extends Controller
     {
         Log::info("[INFO] User " . $bot->getUser()->getUsername() . " sent a message!");
 
+        // Removing funky characters from user names.
+        $username = $str = preg_replace('/[^a-z\d \-\'\.]/i', '', $bot->getUser()->getUsername());
+
         $this->user = User::updateOrCreate(
             [
                 "slack_id"      => $bot->getUser()->getId()
             ],
             [
                 "slack_team_id" => $bot->getUser()->getInfo()['team_id'],
-                "username"      => $bot->getUser()->getUsername()
+                "username"      => $username
             ]
         );
     }

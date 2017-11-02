@@ -37,12 +37,15 @@ class BotManController extends Controller
             return view('main', $alert);
         }
 
+        // Removing funky characters from team names.
+        $team_name = $str = preg_replace('/[^a-z\d \-\']/i', '', $result->team_name);
+
         Installation::updateOrCreate(
             [
                 'team_id' => $result->team_id
             ],
             [
-                'team_name' => $result->team_name,
+                'team_name' => $team_name,
                 'slack_bot_access_token' => $result->bot->bot_access_token
             ]
         );
