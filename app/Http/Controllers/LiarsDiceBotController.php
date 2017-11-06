@@ -728,8 +728,7 @@ class LiarsDiceBotController extends Controller
         $username = preg_replace('/[^a-z\d \-\'\.]/i', '', $bot->getUser()->getUsername());
 
         if(!isset($bot->getUser()->getInfo()['team_id'])) {
-            $request = app(\Illuminate\Http\Request::class);
-            $team_id = $request->team_id;
+            $team_id = request()->get('team_id');
         }else{
             $team_id = $bot->getUser()->getInfo()['team_id'];
         }
