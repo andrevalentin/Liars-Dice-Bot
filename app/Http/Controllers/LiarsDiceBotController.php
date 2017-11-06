@@ -165,7 +165,7 @@ class LiarsDiceBotController extends Controller
         $participant->participant_id = $this->user->id;
         $participant->save();
 
-        $bot->reply("You have successfully joined the game.. please wait for the host to start it!");
+        $bot->reply("<@".$this->user->slack_id."> successfully joined the game.. please wait for the host to start it!");
     }
 
     public function leave(BotMan $bot)
