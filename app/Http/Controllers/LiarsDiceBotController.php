@@ -725,7 +725,7 @@ class LiarsDiceBotController extends Controller
     private function handleUser(BotMan $bot)
     {
         // Removing funky characters from user names.
-        $username = $str = preg_replace('/[^a-z\d \-\'\.]/i', '', $bot->getUser()->getUsername());
+        $username = preg_replace('/[^a-z\d \-\'\.]/i', '', $bot->getUser()->getUsername());
 
         if(!isset($bot->getUser()->getInfo()['team_id'])) {
             $request = app(\Illuminate\Http\Request::class);
