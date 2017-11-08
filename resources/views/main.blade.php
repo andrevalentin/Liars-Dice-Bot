@@ -9,12 +9,30 @@
 
     <!-- Fonts -->
     <link href="https://fonts.googleapis.com/css?family=Open+Sans:400,700" rel="stylesheet">
-    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap.min.css" integrity="sha384-BVYiiSIFeK1dGmJRAkycuHAHRg32OmUcww7on3RYdg4Va+PmSTsz/K68vbdEjh4u" crossorigin="anonymous">
+    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap.min.css"
+          integrity="sha384-BVYiiSIFeK1dGmJRAkycuHAHRg32OmUcww7on3RYdg4Va+PmSTsz/K68vbdEjh4u" crossorigin="anonymous">
     <!-- Styles -->
 </head>
 <body>
 
 @include('header.header')
+
+@if(!empty($alert))
+    @if($alert->status == 'error')
+        <div class="alert">
+            <div class="alert alert-danger" style="margin: 0;text-align: center">
+                <strong>{{$alert->message}}</strong>
+            </div>
+        </div>
+    @endif
+    @if($alert->status == 'success')
+        <div class="alert">
+            <div class="alert alert-success" style="margin: 0;text-align: center">
+                <strong>{{$alert->message}}</strong>
+            </div>
+        </div>
+    @endif
+@endif
 
 <div class="container-fluid" style="padding: 0">
     @if(View::hasSection('content'))
@@ -34,6 +52,7 @@
         font-family: 'Open Sans', sans-serif;
         background: whitesmoke;
     }
+
     .panel {
         border-radius: 0;
     }
