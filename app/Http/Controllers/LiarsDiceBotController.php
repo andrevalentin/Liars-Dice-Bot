@@ -129,7 +129,7 @@ class LiarsDiceBotController extends Controller
 
         Log::info("[INFO] New game of Liar's Dice starting! ID: " . $this->game->id . " Host: " . $this->user->username);
 
-        $bot->reply("Let's play Liar's Dice! <@" . $this->user->slack_id . "> is hosting.. This is game number #" . $this->game->id . "! Type \"me\" to join!");
+        $bot->reply("Let's play Liar's Dice! <@" . $this->user->slack_id . "> is hosting.. Type \"me\" to join!");
         return;
     }
 
