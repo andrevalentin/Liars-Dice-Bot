@@ -34,7 +34,7 @@ class BotManController extends Controller
                 'status' => 'error',
                 'message' => 'The installation of the App failed! If you didn\'t initiate this, then please try again..'
             ];
-            return view('main', $alert);
+            return view('main', ['alert'=> $alert]);
         }
 
         // Removing funky characters from team names.
@@ -73,7 +73,7 @@ class BotManController extends Controller
             'status' => 'success',
             'message' => 'The installation of the App was successful! You are now ready to play Lair\'s Dice!'
         ];
-        return view('main', $alert);
+        return view('main', ['alert'=> $alert]);
     }
 
     /**
