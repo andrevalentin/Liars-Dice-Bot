@@ -42,17 +42,17 @@ class ProcessMessage implements ShouldQueue
      */
     public function handle()
     {
-        $msg_txt = strtolower($this->bot->getMessage()->getText());
+        $msg_txt = $this->bot->getMessage()->getText();
 
-        if($msg_txt == 'start game') {
+        if(strtolower($msg_txt) == 'start game') {
             $this->liars_dice->start($this->bot);
         } elseif(preg_match('/^([1-9]{0,1}[0-9]+(,|\.)[0-6])$/', $msg_txt)) {
             $this->liars_dice->playRound($this->bot);
-        } elseif(preg_match('/^play liar.*$/', $msg_txt)) {
+        } elseif(preg_match('/^play liar.*$/', strtolower($msg_txt))) {
             $this->liars_dice->host($this->bot);
-        } elseif($msg_txt == 'liar') {
+        } elseif(strtolower($msg_txt) == 'liar') {
             $this->liars_dice->playRound($this->bot);
-        } elseif($msg_txt == 'abort game') {
+        } elseif(strtolower($msg_txt) == 'abort game') {
             $this->liars_dice->abort($this->bot);
         } elseif(preg_match('/^say .*$/i', $msg_txt)) {
             $this->liars_dice->say($this->bot);
