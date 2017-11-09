@@ -18,17 +18,17 @@
 @include('header.header')
 
 @if(!empty($alert))
-    @if($alert->status == 'error')
+    @if($alert['status'] == 'error')
         <div class="alert">
             <div class="alert alert-danger" style="margin: 0;text-align: center">
-                <strong>{{$alert->message}}</strong>
+                <strong>{{$alert['message']}}</strong>
             </div>
         </div>
     @endif
-    @if($alert->status == 'success')
+    @if($alert['status'] == 'success')
         <div class="alert">
             <div class="alert alert-success" style="margin: 0;text-align: center">
-                <strong>{{$alert->message}}</strong>
+                <strong>{{$alert['message']}}</strong>
             </div>
         </div>
     @endif
