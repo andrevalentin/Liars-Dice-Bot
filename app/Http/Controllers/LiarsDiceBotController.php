@@ -667,7 +667,7 @@ class LiarsDiceBotController extends Controller
         $this->dice_left_in_game += $no_of_dice;
         $rolls = [];
         for ($c = 0; $c != $no_of_dice; $c++) {
-            $roll = rand(1, 6);
+            $roll = random_int(1, 6);
             $rolls[] = $roll;
         }
         return $rolls;
