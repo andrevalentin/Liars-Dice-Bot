@@ -94,7 +94,7 @@ class LiarsDiceBotController extends Controller
         // Take bot message and get rid of the "host liar" part, only keeping any arguments it might contain.
         $message = substr($bot->getMessage()->getText(), 9);
         // Check if there could even possibly be any arguments after the "host liar" message.
-        preg_match_all("/--\w+=\w+/", $message, $matches);
+        preg_match_all("/--\w+?\w*/", $message, $matches);
         if(count($matches)) {
             // Here we want to look for any arguments in the following format "--key=value"
             foreach($matches[0] as $arg){
@@ -133,7 +133,7 @@ class LiarsDiceBotController extends Controller
         $this->current_participant->participant_id = $this->user->id;
         $this->current_participant->save();
 
-        Log::info("[INFO] New game of Liar's Dice starting! ID: " . $this->game->id . " Host: " . $this->user->username);
+        Log::info("[INFO] New game of Liar's Dice starting! ID: " . $this->game->id . " Host: " . $this->user->username . " Staircase: " . $this->game->staircase_enabled . " Frederiksberg: " . $this->game->frederiksberg_enabled);
 
         $bot->reply("Let's play Liar's Dice! <@" . $this->user->slack_id . "> is hosting.. Type \"me\" to join!");
         return;
