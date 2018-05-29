@@ -94,7 +94,7 @@ class LiarsDiceBotController extends Controller
         // Take bot message and get rid of the "host liar" part, only keeping any arguments it might contain.
         $message = substr($bot->getMessage()->getText(), 9);
         // Check if there could even possibly be any arguments after the "host liar" message.
-        preg_match_all("/--\w+?\w*/", $message, $matches);
+        preg_match_all("/--\w+=?\w*/", $message, $matches);
         if(count($matches)) {
             // Here we want to look for any arguments in the following format "--key=value"
             foreach($matches[0] as $arg){
