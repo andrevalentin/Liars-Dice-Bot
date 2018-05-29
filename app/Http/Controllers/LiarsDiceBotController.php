@@ -461,9 +461,15 @@ class LiarsDiceBotController extends Controller
 
         // Checking for Frederiksberg
         $frederiksberg_hit = false;
+        $frederiksberg_winner_id = null;
         if($this->game->frederiksberg_enabled && $this->end_round_hits == $dice_amount_to_look_for) {
             Log::info("[INFO] Frederiksberg was enabled & hit!");
             $frederiksberg_hit = true;
+            if($loser_id == $this->user->id) {
+                $frederiksberg_winner_id = $last_call->participant_id;
+            }else{
+                $frederiksberg_winner_id = $this->user->id;
+            }
         }
 
         $current_call = new Call;
@@ -474,7 +480,7 @@ class LiarsDiceBotController extends Controller
         $current_call->loser_id = $loser_id;
         $current_call->save();
 
-        $this->initRound($bot, $this->current_round_participants, null, $this->current_round_rolls->first()->round + 1, $frederiksberg_hit, $loser_id);
+        $this->initRound($bot, $this->current_round_participants, null, $this->current_round_rolls->first()->round + 1, $frederiksberg_hit, $loser_id, $frederiksberg_winner_id);
 
         if($this->game->state == 'concluded') {
             return;
@@ -617,7 +623,7 @@ class LiarsDiceBotController extends Controller
         }
     }
 
-    private function initRound(BotMan $bot, $participants, $no_of_dice, $round, $frederiksberg_hit = null, $loser_id = null) {
+    private function initRound(BotMan $bot, $participants, $no_of_dice, $round, $frederiksberg_hit = null, $loser_id = null, $frederiksberg_winner_id = null) {
         foreach ($participants AS $participant) {
             $player = User::find($participant->participant_id);
             if($round > 0) {
@@ -660,7 +666,7 @@ class LiarsDiceBotController extends Controller
                 if($loser_id == $participant->participant_id) {
                     $dice_to_roll = $current_dice_count;
                 }else{
-                    if($this->game->frederiksberg_enabled && $frederiksberg_hit) {
+                    if($this->game->frederiksberg_enabled && $frederiksberg_hit && $frederiksberg_winner_id != $participant->participant_id) {
                         $dice_to_roll = $current_dice_count;
                     }else{
                         $dice_to_roll = $current_dice_count - 1;
