@@ -632,7 +632,10 @@ class LiarsDiceBotController extends Controller
                     ->orderBy('round', 'desc')
                     ->first();
                 $current_dice_count = count(json_decode($last_roll->roll));
-                if($current_dice_count == 1 && $loser_id != $participant->participant_id && ($this->game->frederiksberg_enabled && $frederiksberg_hit)) {
+                if($current_dice_count == 1 && $loser_id != $participant->participant_id) {
+                    if($this->game->frederiksberg_enabled && $frederiksberg_hit && $frederiksberg_winner_id != $participant->participant_id) {
+                        break;
+                    }
                     $this->current_round_participant_count--;
                     // Participant currently being looped over won and will be removed from the game..
                     $bot->say("Hi, you won the game! There were *$this->end_round_hits $this->end_round_dice_face_to_look_for's*.. Congrats! :meat_on_bone:", $player->slack_id);
