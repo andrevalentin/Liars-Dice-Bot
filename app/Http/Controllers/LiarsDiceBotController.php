@@ -57,7 +57,7 @@ class LiarsDiceBotController extends Controller
         if(!$this->messageSentToBot($bot)) {
             return;
         }
-        $message = OutgoingMessage::create('The rules for the games are a bit too long to post on slack.. so here is a link: https://liarsapp.valentin.nu/help');
+        $message = OutgoingMessage::create('The rules for the games are a bit too long to post on Slack, so here is a link: https://liarsdice.app/help');
         $bot->say($message, $this->user->slack_id);
     }
 
