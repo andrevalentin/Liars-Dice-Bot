@@ -51,6 +51,17 @@ class LiarsDiceBotController extends Controller
         ], 200);
     }
 
+    public function handleError(BotMan $bot)
+    {
+        $this->handleUser($bot);
+        if(!$this->messageSentToBot($bot)) {
+            return;
+        }
+        // Let's make the message specific to "incorrect calls" right now, as that is the only thing we are catching.
+        $message = OutgoingMessage::create('Sorry, that is not a valid call. Please try again.');
+        $bot->say($message, $this->user->slack_id);
+    }
+
     public function help(BotMan $bot)
     {
         $this->handleUser($bot);
