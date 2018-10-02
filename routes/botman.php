@@ -11,7 +11,8 @@ $botman->hears('leave[ ]*', \App\Http\Controllers\LiarsDiceBotController::class.
 $botman->hears('start game[ ]*', \App\Http\Controllers\LiarsDiceBotController::class.'@handle');
 
 // routes should exclusively work in the private message between the bot and the user
-$botman->hears('([1-9]{0,1}[0-9]+(,|.)[0-6])', \App\Http\Controllers\LiarsDiceBotController::class.'@handle');
+$botman->hears('([1-9][0-9]{0,3}(,|\.)[1-6])', \App\Http\Controllers\LiarsDiceBotController::class.'@handle');
+$botman->hears('([1-9][0-9]{4,}(,|\.)[0-9]{1,9})', \App\Http\Controllers\LiarsDiceBotController::class.'@handleError');
 $botman->hears('liar[ ]*', \App\Http\Controllers\LiarsDiceBotController::class.'@handle');
 $botman->hears('abort game[ ]*', \App\Http\Controllers\LiarsDiceBotController::class.'@handle');
 $botman->hears('say .+', \App\Http\Controllers\LiarsDiceBotController::class.'@handle');
